@@ -254,8 +254,28 @@ export function render({ body, widget, theme, sizeForWidget, settings }) {
     });
     mainBox.add_child(matrixBox);
 
-    const monthLabelsRow = new St.Widget({ x_align: Clutter.ActorAlign.START });
-    matrixBox.add_child(monthLabelsRow);
+    // Month labels container with same structure as matrixBody
+    const monthLabelsContainer = new St.BoxLayout({
+        orientation: Clutter.Orientation.HORIZONTAL,
+        x_align: Clutter.ActorAlign.FILL,
+        x_expand: true,
+        style: `spacing: ${isMini ? 6 : 0}px;`,
+    });
+    matrixBox.add_child(monthLabelsContainer);
+
+    // Spacer for day labels width (to align months with grid)
+    const monthLabelsSpacer = new St.Widget({
+        x_expand: false,
+        style: `width: ${dayLabelsWidth}px;`,
+    });
+    monthLabelsContainer.add_child(monthLabelsSpacer);
+
+    // Month labels row (will be aligned with grid canvas)
+    const monthLabelsRow = new St.Widget({ 
+        x_align: Clutter.ActorAlign.START,
+        x_expand: true,
+    });
+    monthLabelsContainer.add_child(monthLabelsRow);
 
     const matrixBody = new St.BoxLayout({
         orientation: Clutter.Orientation.HORIZONTAL,
@@ -368,7 +388,7 @@ export function render({ body, widget, theme, sizeForWidget, settings }) {
         const pitch = cellSize + cellGap;
         monthLabelsRow.destroy_all_children();
         const monthBottomMargin = isMini ? 0 : 4;
-        monthLabelsRow.style = `margin-left: ${dayLabelsWidth}px; height: ${layout.month}px; margin-bottom: ${monthBottomMargin}px;`;
+        monthLabelsRow.style = `height: ${layout.month}px; margin-bottom: ${monthBottomMargin}px;`;
         
         let curMonth = -1;
         let lastLabelEnd = -50;
