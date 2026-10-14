@@ -135,7 +135,7 @@ export function render({ body, widget, theme, sizeForWidget, settings }) {
             : {
                 avatar: 28, username: 14, badge: 12, label: 12, entryWidth: 150,
                 footer: 12, month: 14, spacing: 3, gap: 2, daysW: 28,
-                footerFont: 11, dayRows: translateDayRows(DAY_LABEL_ROWS), maxWeeks: 52,
+                footerFont: 11, dayRows: translateDayRows(DAY_LABEL_ROWS), maxWeeks: 60,
             };
 
     const avatarSize = layout.avatar;
