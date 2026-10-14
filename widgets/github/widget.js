@@ -259,7 +259,7 @@ export function render({ body, widget, theme, sizeForWidget, settings }) {
 
     const matrixBody = new St.BoxLayout({
         orientation: Clutter.Orientation.HORIZONTAL,
-        x_align: Clutter.ActorAlign.FILL,
+        x_align: Clutter.ActorAlign.END,
         x_expand: true,
         y_expand: isLarge ? false : true,
         style: `spacing: ${isMini ? 6 : 0}px;`,
