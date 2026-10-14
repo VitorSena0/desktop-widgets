@@ -118,24 +118,24 @@ export function render({ body, widget, theme, sizeForWidget, settings }) {
         ? {
             avatar: 20, username: 15, badge: 14, label: 11, entryWidth: 100,
             footer: 0, month: 0, spacing: 2, gap: 1, daysW: 20,
-            footerFont: 0, dayRows: translateDayRows(DAY_LABEL_ROWS_MINI), maxWeeks: 28,
+            footerFont: 0, dayRows: translateDayRows(DAY_LABEL_ROWS_MINI), maxWeeks: 32,
         }
         : isMiniLarge
             ? {
                 avatar: 24, username: 14, badge: 14, label: 13, entryWidth: 120,
                 footer: 0, month: 11, spacing: 4, gap: 2, daysW: 20,
-                footerFont: 0, dayRows: translateDayRows(DAY_LABEL_ROWS), maxWeeks: 26,
+                footerFont: 0, dayRows: translateDayRows(DAY_LABEL_ROWS), maxWeeks: 30,
             }
         : isLarge
             ? {
                 avatar: 34, username: 16, badge: 16, label: 13, entryWidth: 170,
                 footer: 14, month: 15, spacing: 6, gap: 2, daysW: 30,
-                footerFont: 16, dayRows: translateDayRows(DAY_LABEL_ROWS), maxWeeks: 40,
+                footerFont: 16, dayRows: translateDayRows(DAY_LABEL_ROWS), maxWeeks: 48,
             }
             : {
                 avatar: 28, username: 14, badge: 12, label: 12, entryWidth: 150,
                 footer: 12, month: 14, spacing: 3, gap: 2, daysW: 28,
-                footerFont: 11, dayRows: translateDayRows(DAY_LABEL_ROWS), maxWeeks: 36,
+                footerFont: 11, dayRows: translateDayRows(DAY_LABEL_ROWS), maxWeeks: 44,
             };
 
     const avatarSize = layout.avatar;
