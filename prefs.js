@@ -168,108 +168,6 @@ export default class WidgetsPrefs extends ExtensionPreferences {
      * Тому кожна іконка має два кольорові варіанти, а ми обираємо потрібний
      * і одразу перемальовуємо всі зареєстровані місця при зміні теми.
      */
-    _setupThemedIcons() {
-        this._iconTargets = [];
-        this._themeSignalIds = [];
-
-        this._interfaceSettings = new Gio.Settings({
-            schema_id: 'org.gnome.desktop.interface',
-        });
-
-        // Adw.StyleManager знає фактично застосовану тему: він враховує і
-        // color-scheme, і gtk-theme (Yaru-dark, Adwaita-dark), і те, що
-        // скінчасно бачить GTK. Одного color-scheme не вистачає — під темною
-        // gtk-темою він лишається 'default', і ми б показували світлі іконки
-        // на темному тлі (і навпаки).
-        const styleManager = Adw.StyleManager.get_default();
-
-        const currentTheme = () => {
-            if (styleManager && typeof styleManager.get_dark === 'function') {
-                return styleManager.get_dark() ? 'dark' : 'light';
-            };
-
-            // Fallback для старих libadwaita: суфікси у самій назві теми.
-            const gtkTheme = this._interfaceSettings.get_string('gtk-theme');
-            const scheme = this._interfaceSettings.get_string('color-scheme');
-
-            if (scheme === 'prefer-dark' || /-dark$/i.test(gtkTheme)) {
-                return 'dark';
-            };
-
-            return 'light';
-        };
-
-        this._iconTheme = currentTheme();
-
-        const apply = () => {
-            const theme = currentTheme();
-            if (theme === this._iconTheme)
-                return;
-
-            this._iconTheme = theme;
-
-            // Оновлюємо іконки: для сторінок оновлюємо page.icon_name,
-            // а також синхронізуємо іконки в sidebar
-            for (const [target, base] of this._iconTargets) {
-                const name = `${base}-${theme}`;
-                if (typeof target.set_icon_name === 'function') {
-                    target.set_icon_name(name);
-                } else if ('icon_name' in target) {
-                    target.icon_name = name;
-                }
-
-                // Якщо це page з sidebar іконкою, оновлюємо і її
-                if (target._sidebarIcon) {
-                    target._sidebarIcon.set_from_icon_name(name);
-                }
-            };
-
-            // Форсуємо перемалювання sidebar
-            this._sidebarListBox?.queue_draw();
-        };
-
-        this._applyIconTheme = apply;
-
-        // Канонічний сигнал: Adw сам знає, коли ефективна тема змінилась.
-        if (styleManager && typeof styleManager.connect === 'function') {
-            this._themeSignalIds.push([
-                styleManager,
-                styleManager.connect('notify::dark', () => apply()),
-            ]);
-        };
-
-        // Додаткові джерела: прямі зміни налаштувань теми.
-        for (const key of ['color-scheme', 'gtk-theme']) {
-            this._themeSignalIds.push([
-                this._interfaceSettings,
-                this._interfaceSettings.connect(`changed::${key}`, () => apply()),
-            ]);
-        };
-
-        // Fallback-полінг на випадок, якщо сигнали не прийдуть.
-        this._themeCheckId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 300, () => {
-            apply();
-            return GLib.SOURCE_CONTINUE;
-        });
-    }
-
-    _applyIconName(target, name) {
-        if (typeof target.set_icon_name === 'function') {
-            target.set_icon_name(name);
-        } else if ('icon_name' in target) {
-            target.icon_name = name;
-        }
-    }
-
-    /**
-     * Ставить тематичну іконку на віджет і запам'ятовує його, щоб
-     * _setupThemedIcons() міг оновити колір при зміні теми.
-     */
-    _setThemedIcon(target, base) {
-        this._iconTargets.push([target, base]);
-        this._applyIconName(target, `${base}-${this._iconTheme}`);
-    }
-
     fillPreferencesWindow(window) {
         this._window = window;
         this._pages = [];
@@ -277,11 +175,6 @@ export default class WidgetsPrefs extends ExtensionPreferences {
         window.set_default_size(900, 700);
         window.set_title(_('Desktop Widgets'));
         window.set_search_enabled(false);
-
-        const iconTheme = Gtk.IconTheme.get_for_display(window.get_display());
-        iconTheme.add_search_path(this.dir.get_child('icons').get_path());
-
-        this._setupThemedIcons();
 
         // Збільшуємо іконки в бічній панелі через CSS.
         const cssProvider = new Gtk.CssProvider();
@@ -320,116 +213,96 @@ export default class WidgetsPrefs extends ExtensionPreferences {
         // General page
         const generalPage = new Adw.PreferencesPage();
         generalPage.set_title(_('General'));
-        this._setThemedIcon(generalPage, 'dw-settings');
+        generalPage.set_icon_name('preferences-system-symbolic');
         this._buildGeneralPage(generalPage, settings);
         this._addSidebarPage(generalPage);
 
         // Photos page
         const photosPage = this._createPhotosPage(settings);
         photosPage.set_title(_('Photos Widget'));
-        this._setThemedIcon(photosPage, 'dw-image');
+        photosPage.set_icon_name('image-x-generic-symbolic');
         this._addSidebarPage(photosPage);
 
         // Battery page
         const batteryPage = this._createBatteryPage(settings);
         batteryPage.set_title(_('Battery Widget'));
-        this._setThemedIcon(batteryPage, 'dw-battery-full');
+        batteryPage.set_icon_name('battery-symbolic');
         this._addSidebarPage(batteryPage);
 
         // Screen Time page
         const screentimePage = this._createScreentimePage(settings);
         screentimePage.set_title(_('Screen Time Widget'));
-        this._setThemedIcon(screentimePage, 'dw-hourglass');
+        screentimePage.set_icon_name('alarm-symbolic');
         this._addSidebarPage(screentimePage);
 
         // Music page
         const musicPage = this._createMusicPage(settings);
         musicPage.set_title(_('Music Widget'));
-        this._setThemedIcon(musicPage, 'dw-music');
+        musicPage.set_icon_name('folder-music-symbolic');
         this._addSidebarPage(musicPage);
 
         // Calendar page
         const calendarPage = this._createCalendarPage(settings);
         calendarPage.set_title(_('Calendar Widget'));
-        this._setThemedIcon(calendarPage, 'dw-calendar-days');
+        calendarPage.set_icon_name('x-office-calendar-symbolic');
         this._addSidebarPage(calendarPage);
 
         // Digital Clock page
         const digitalClockPage = this._createDigitalClockPage(settings);
         digitalClockPage.set_title(_('Digital Clock Widget'));
-        this._setThemedIcon(digitalClockPage, 'dw-clock-plus');
+        digitalClockPage.set_icon_name('preferences-system-time-symbolic');
         this._addSidebarPage(digitalClockPage);
 
         // GitHub page
         const githubPage = this._createGithubPage(settings);
         githubPage.set_title(_('GitHub Widget'));
-        this._setThemedIcon(githubPage, 'dw-code-xml');
+        githubPage.set_icon_name('network-server-symbolic');
         this._addSidebarPage(githubPage);
 
         // App Launcher page
         const appLauncherPage = this._createAppLauncherPage(settings);
         appLauncherPage.set_title(_('App Launcher Widget'));
-        this._setThemedIcon(appLauncherPage, 'dw-layout-grid');
+        appLauncherPage.set_icon_name('view-app-grid-symbolic');
         this._addSidebarPage(appLauncherPage);
 
         // Folder Launcher page
         const folderLauncherPage = this._createFolderLauncherPage(settings);
         folderLauncherPage.set_title(_('Folder Launcher Widget'));
-        this._setThemedIcon(folderLauncherPage, 'dw-folder');
+        folderLauncherPage.set_icon_name('folder-symbolic');
         this._addSidebarPage(folderLauncherPage);
 
         // Notes page
         const notesPage = this._createNotesPage(settings);
         notesPage.set_title(_('Notes Widget'));
-        this._setThemedIcon(notesPage, 'dw-notebook-pen');
+        notesPage.set_icon_name('text-x-generic-symbolic');
         this._addSidebarPage(notesPage);
 
         // Pomodoro page
         const pomodoroPage = this._createPomodoroPage(settings);
         pomodoroPage.set_title(_('Pomodoro Widget'));
-        this._setThemedIcon(pomodoroPage, 'dw-hourglass');
+        pomodoroPage.set_icon_name('alarm-symbolic');
         this._addSidebarPage(pomodoroPage);
 
         // Lava page
         const lavaPage = this._createLavaPage(settings);
         lavaPage.set_title(_('Lava Lamp Widget'));
-        this._setThemedIcon(lavaPage, 'dw-sparkles');
+        lavaPage.set_icon_name('weather-clear-symbolic');
         this._addSidebarPage(lavaPage);
 
         // Appearance page
         const appearancePage = this._createAppearancePage(settings);
         appearancePage.set_title(_('Appearance'));
-        this._setThemedIcon(appearancePage, 'dw-sparkles');
+        appearancePage.set_icon_name('applications-graphics-symbolic');
         this._addSidebarPage(appearancePage);
 
         // About page
         const aboutPage = this._createAboutPage();
         aboutPage.set_title(_('About'));
-        this._setThemedIcon(aboutPage, 'dw-info');
+        aboutPage.set_icon_name('help-about-symbolic');
         this._addSidebarPage(aboutPage);
 
         // Handle window close
         window.connect('close-request', () => {
-            // Зупиняємо полінг теми
-            if (this._themeCheckId) {
-                GLib.source_remove(this._themeCheckId);
-                this._themeCheckId = 0;
-            }
-
-            // Відписуємо всі сигнали теми (кожен від свого об'єкта)
-            for (const [source, signalId] of this._themeSignalIds ?? []) {
-                try {
-                    source?.disconnect(signalId);
-                } catch (_error) {
-                    // Об'єкт міг уже бути зруйнований
-                }
-            }
-
-            this._themeSignalIds = [];
-            this._interfaceSettings = null;
-            this._applyIconTheme = null;
-            this._iconTargets = [];
-
             for (const page of this._pages)
                 page?.destroy?.();
 
@@ -596,6 +469,157 @@ export default class WidgetsPrefs extends ExtensionPreferences {
         showPanelIconRow.set_active(settings.get_boolean('show-panel-icon'));
         settings.bind('show-panel-icon', showPanelIconRow, 'active', Gio.SettingsBindFlags.DEFAULT);
         widgetsGroup.add(showPanelIconRow);
+
+        // Widget theme settings expandable row
+        const themeExpanderRow = new Adw.ExpanderRow({
+            title: _('Widget theme settings'),
+            subtitle: _('Configure custom theme for widgets'),
+            show_enable_switch: true,
+        });
+        
+        // Bind the enable switch to settings
+        settings.bind('use-custom-widget-theme', themeExpanderRow, 'enable-expansion', Gio.SettingsBindFlags.DEFAULT);
+        
+        themeExpanderRow.connect('notify::enable-expansion', () => {
+            const enabled = themeExpanderRow.enable_expansion;
+            if (settings.get_boolean('use-custom-widget-theme') !== enabled) {
+                settings.set_boolean('use-custom-widget-theme', enabled);
+            }
+        });
+
+        // Widget theme dropdown
+        const themeGeneralModel = new Gtk.StringList();
+        themeGeneralModel.append(_('Custom'));
+        themeGeneralModel.append(_('Dark'));
+        themeGeneralModel.append(_('Light'));
+
+        const themeGeneralDropdown = new Gtk.DropDown({
+            model: themeGeneralModel,
+            valign: Gtk.Align.CENTER,
+        });
+
+        const themeGeneralRow = new Adw.ActionRow({
+            title: _('Widget theme'),
+            subtitle: _('Theme for widgets'),
+            activatable_widget: themeGeneralDropdown,
+        });
+        themeGeneralRow.add_suffix(themeGeneralDropdown);
+        themeExpanderRow.add_row(themeGeneralRow);
+
+        // Theme for light system mode
+        const themeLightModel = new Gtk.StringList();
+        themeLightModel.append(_('Dark'));
+        themeLightModel.append(_('Light'));
+
+        const themeLightDropdown = new Gtk.DropDown({
+            model: themeLightModel,
+            valign: Gtk.Align.CENTER,
+        });
+
+        const themeLightRow = new Adw.ActionRow({
+            title: _('For light system theme'),
+            activatable_widget: themeLightDropdown,
+        });
+        themeLightRow.add_suffix(themeLightDropdown);
+        themeExpanderRow.add_row(themeLightRow);
+
+        // Theme for dark system mode
+        const themeDarkModel = new Gtk.StringList();
+        themeDarkModel.append(_('Dark'));
+        themeDarkModel.append(_('Light'));
+
+        const themeDarkDropdown = new Gtk.DropDown({
+            model: themeDarkModel,
+            valign: Gtk.Align.CENTER,
+        });
+
+        const themeDarkRow = new Adw.ActionRow({
+            title: _('For dark system theme'),
+            activatable_widget: themeDarkDropdown,
+        });
+        themeDarkRow.add_suffix(themeDarkDropdown);
+        themeExpanderRow.add_row(themeDarkRow);
+
+        widgetsGroup.add(themeExpanderRow);
+
+        // Update general dropdown based on settings
+        const updateGeneralDropdown = () => {
+            const customEnabled = settings.get_boolean('use-custom-widget-theme');
+            
+            if (customEnabled) {
+                const sameForBoth = settings.get_boolean('use-same-theme-for-both');
+                if (sameForBoth) {
+                    const theme = settings.get_string('widget-theme-unified');
+                    themeGeneralDropdown.set_selected(theme === 'dark' ? 1 : theme === 'light' ? 2 : 0);
+                } else {
+                    themeGeneralDropdown.set_selected(0); // General
+                }
+            } else {
+                themeGeneralDropdown.set_selected(0); // General
+            }
+        };
+
+        themeGeneralDropdown.connect('notify::selected', () => {
+            const selected = themeGeneralDropdown.get_selected();
+            const customEnabled = settings.get_boolean('use-custom-widget-theme');
+            
+            if (!customEnabled) return;
+            
+            if (selected === 0) { // General
+                settings.set_boolean('use-same-theme-for-both', false);
+            } else {
+                settings.set_boolean('use-same-theme-for-both', true);
+                const theme = selected === 1 ? 'dark' : 'light';
+                if (settings.get_string('widget-theme-unified') !== theme) {
+                    settings.set_string('widget-theme-unified', theme);
+                }
+            }
+        });
+
+        themeLightDropdown.set_selected(settings.get_string('widget-theme-for-light') === 'light' ? 1 : 0);
+        themeLightDropdown.connect('notify::selected', () => {
+            const value = themeLightDropdown.get_selected() === 1 ? 'light' : 'dark';
+            if (settings.get_string('widget-theme-for-light') !== value) {
+                settings.set_string('widget-theme-for-light', value);
+            }
+        });
+        settings.connect('changed::widget-theme-for-light', () => {
+            const value = settings.get_string('widget-theme-for-light');
+            const selected = value === 'light' ? 1 : 0;
+            if (themeLightDropdown.get_selected() !== selected) {
+                themeLightDropdown.set_selected(selected);
+            }
+        });
+
+        themeDarkDropdown.set_selected(settings.get_string('widget-theme-for-dark') === 'light' ? 1 : 0);
+        themeDarkDropdown.connect('notify::selected', () => {
+            const value = themeDarkDropdown.get_selected() === 1 ? 'light' : 'dark';
+            if (settings.get_string('widget-theme-for-dark') !== value) {
+                settings.set_string('widget-theme-for-dark', value);
+            }
+        });
+        settings.connect('changed::widget-theme-for-dark', () => {
+            const value = settings.get_string('widget-theme-for-dark');
+            const selected = value === 'light' ? 1 : 0;
+            if (themeDarkDropdown.get_selected() !== selected) {
+                themeDarkDropdown.set_selected(selected);
+            }
+        });
+
+        // Update visibility of theme rows based on settings
+        const updateThemeRowsVisibility = () => {
+            const customEnabled = settings.get_boolean('use-custom-widget-theme');
+            const sameForBoth = settings.get_boolean('use-same-theme-for-both');
+            
+            themeLightRow.visible = !sameForBoth;
+            themeDarkRow.visible = !sameForBoth;
+            updateGeneralDropdown();
+        };
+        
+        updateThemeRowsVisibility();
+        settings.connect('changed::use-custom-widget-theme', updateThemeRowsVisibility);
+        settings.connect('changed::use-same-theme-for-both', updateThemeRowsVisibility);
+        settings.connect('changed::widget-theme-unified', updateGeneralDropdown);
 
         const deleteShortcutButton = new Gtk.Button({
             icon_name: 'edit-delete-symbolic',
@@ -2646,10 +2670,10 @@ export default class WidgetsPrefs extends ExtensionPreferences {
             halign: Gtk.Align.CENTER,
         });
         const logo = new Gtk.Image({
+            icon_name: 'org.gnome.Extensions-symbolic',
             pixel_size: 128,
             margin_bottom: 6,
         });
-        this._setThemedIcon(logo, 'dw-paw-print');
         headerBox.append(logo);
         headerBox.append(new Gtk.Label({
             label: this.metadata.name,
@@ -2698,7 +2722,7 @@ export default class WidgetsPrefs extends ExtensionPreferences {
     /**
      * Рядок посилання на сторінці «Про розширення».
      * `iconName` — базова назва нашої іконки (без суфікса теми), її колір
-     * підставляє _setThemedIcon; сторонні іконки лишаються як є.
+     * підставляє системні іконки; сторонні іконки лишаються як є.
      */
     _aboutLinkRow(title, iconName, url, subtitle) {
         const row = new Adw.ActionRow({
@@ -2710,11 +2734,10 @@ export default class WidgetsPrefs extends ExtensionPreferences {
             row.set_subtitle(subtitle);
         }
 
-        const icon = new Gtk.Image({valign: Gtk.Align.CENTER});
-        if (iconName.startsWith('dw-'))
-            this._setThemedIcon(icon, iconName);
-        else
-            icon.icon_name = iconName;
+        const icon = new Gtk.Image({
+            valign: Gtk.Align.CENTER,
+            icon_name: iconName,
+        });
         row.add_prefix(icon);
 
         row.add_suffix(new Gtk.Image({

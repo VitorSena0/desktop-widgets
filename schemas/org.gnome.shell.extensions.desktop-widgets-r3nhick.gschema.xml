@@ -231,6 +231,31 @@
       <summary>Show panel icon</summary>
       <description>Display the Desktop Widgets icon in the top panel for quick access to edit mode.</description>
     </key>
+    <key name="use-custom-widget-theme" type="b">
+      <default>false</default>
+      <summary>Use custom widget theme</summary>
+      <description>Override system theme for widgets with custom theme preferences.</description>
+    </key>
+    <key name="use-same-theme-for-both" type="b">
+      <default>true</default>
+      <summary>Use same widget theme for both light and dark modes</summary>
+      <description>When enabled, use the same widget theme regardless of system theme. When disabled, set different themes for light and dark system modes.</description>
+    </key>
+    <key name="widget-theme-unified" type="s">
+      <default>'dark'</default>
+      <summary>Widget theme for all modes</summary>
+      <description>Theme to use for widgets in all system modes. Allowed values: dark, light.</description>
+    </key>
+    <key name="widget-theme-for-light" type="s">
+      <default>'dark'</default>
+      <summary>Widget theme when system is light</summary>
+      <description>Theme to use for widgets when system is in light mode. Allowed values: dark, light.</description>
+    </key>
+    <key name="widget-theme-for-dark" type="s">
+      <default>'dark'</default>
+      <summary>Widget theme when system is dark</summary>
+      <description>Theme to use for widgets when system is in dark mode. Allowed values: dark, light.</description>
+    </key>
     <key name="open-widget-picker" type="b">
       <default>false</default>
       <summary>Open widget picker on preferences launch</summary>

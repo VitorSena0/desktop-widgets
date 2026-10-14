@@ -509,6 +509,11 @@ class WidgetController {
       // plain effect property, so it needs no re-cropping at all.
       'changed::style-light-glass-blur', () => this._syncGlass(),
       'changed::style-light-glass-opacity', () => this._restyleWidgets(),
+      'changed::use-custom-widget-theme', () => this._scheduleAppearance('rebuild'),
+      'changed::use-same-theme-for-both', () => this._scheduleAppearance('rebuild'),
+      'changed::widget-theme-unified', () => this._scheduleAppearance('rebuild'),
+      'changed::widget-theme-for-light', () => this._scheduleAppearance('rebuild'),
+      'changed::widget-theme-for-dark', () => this._scheduleAppearance('rebuild'),
       'changed::drag-active', () => this._onDragActiveChanged(),
       'changed::show-panel-icon', () => this._syncPanelIcon(),
       this
@@ -1143,7 +1148,25 @@ class WidgetController {
   };
 
   _gnomeTheme() {
-    const dark = darkStyleEnabled(this._interfaceSettings);
+    const systemDark = darkStyleEnabled(this._interfaceSettings);
+    const useCustomTheme = this._layoutSettings.get_boolean('use-custom-widget-theme');
+    
+    let dark = systemDark;
+    if (useCustomTheme) {
+      const useSameForBoth = this._layoutSettings.get_boolean('use-same-theme-for-both');
+      let themeChoice;
+      
+      if (useSameForBoth) {
+        themeChoice = this._layoutSettings.get_string('widget-theme-unified');
+      } else {
+        themeChoice = systemDark 
+          ? this._layoutSettings.get_string('widget-theme-for-dark')
+          : this._layoutSettings.get_string('widget-theme-for-light');
+      }
+      
+      dark = (themeChoice === 'dark');
+    }
+    
     const lightGlass = this._layoutSettings.get_boolean('style-light-glass');
     const backgroundSetting = this._layoutSettings.get_string('style-background');
     const borderSetting = this._layoutSettings.get_string('style-border-color');
