@@ -372,13 +372,18 @@ function loadSvgIcon(iconType, size, color) {
 		const [, contents] = file.load_contents(null);
 		let svg = new TextDecoder().decode(contents);
 		
-		// Replace fill color with theme color
-		svg = svg.replace(/fill="[^"]*"/g, `fill="${color}"`);
+		// Replace currentColor and existing colors with theme color
+		svg = svg.replace(/stroke="currentColor"/g, `stroke="${color}"`);
+		svg = svg.replace(/fill="currentColor"/g, `fill="${color}"`);
+		svg = svg.replace(/fill="none"/g, `fill="${color}"`);
 		svg = svg.replace(/stroke="[^"]*"/g, `stroke="${color}"`);
+		svg = svg.replace(/fill="[^"]*"/g, `fill="${color}"`);
 		
-		return `data:image/svg+xml;base64,${GLib.base64_encode(svg)}`;
+		// Encode properly for data URI
+		const encoded = GLib.base64_encode(new TextEncoder().encode(svg));
+		return `data:image/svg+xml;base64,${encoded}`;
 	} catch (e) {
-		warn(`[music] Failed to load SVG icon ${iconType}: ${e}`);
+		warn(`[music] Failed to load SVG icon ${iconType}: ${e.message || e}`);
 		return null;
 	}
 }
