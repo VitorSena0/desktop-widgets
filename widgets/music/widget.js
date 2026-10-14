@@ -348,8 +348,48 @@ export function style(theme) {
 	return `background-color: ${theme.background}; border-color: ${theme.border}; color: ${theme.text}; padding: 12px 16px;`;
 };
 
-function createControlButton(theme, iconName, iconSize = 18, padding = 4, radius = 9) {
-	const icon = new St.Icon({icon_name: iconName, style: `icon-size: ${iconSize}px; color: ${theme.text};`});
+// Map of icon types to SVG filenames
+const ICON_MAP = {
+	'play': 'play.svg',
+	'pause': 'circle-pause.svg',
+	'prev': 'rewind.svg',
+	'next': 'fast-forward.svg',
+	'repeat': 'repeat.svg',
+	'repeat-1': 'repeat-1.svg',
+	'repeat-off': 'repeat-off.svg',
+	'shuffle': 'shuffle.svg',
+};
+
+function loadSvgIcon(iconType, size, color) {
+	const svgPath = assetPath(`widgets/${ICON_MAP[iconType]}`);
+	if (!svgPath) {
+		warn(`[music] SVG icon not found: ${iconType}`);
+		return null;
+	}
+
+	try {
+		const file = Gio.File.new_for_path(svgPath);
+		const [, contents] = file.load_contents(null);
+		let svg = new TextDecoder().decode(contents);
+		
+		// Replace fill color with theme color
+		svg = svg.replace(/fill="[^"]*"/g, `fill="${color}"`);
+		svg = svg.replace(/stroke="[^"]*"/g, `stroke="${color}"`);
+		
+		return `data:image/svg+xml;base64,${GLib.base64_encode(svg)}`;
+	} catch (e) {
+		warn(`[music] Failed to load SVG icon ${iconType}: ${e}`);
+		return null;
+	}
+}
+
+function createControlButton(theme, iconType, iconSize = 18, padding = 4, radius = 9) {
+	const svgUri = loadSvgIcon(iconType, iconSize, theme.text);
+	
+	const icon = new St.Widget({
+		style: `background-image: url("${svgUri}"); background-size: ${iconSize}px ${iconSize}px; width: ${iconSize}px; height: ${iconSize}px;`,
+	});
+	
 	const button = new St.Button({
 		style_class: 'widget-music-button',
 		can_focus: false,
@@ -358,15 +398,19 @@ function createControlButton(theme, iconName, iconSize = 18, padding = 4, radius
 	});
 
 	button._iconSize = iconSize;
+	button._iconType = iconType;
 	button.set_child(icon);
 	button.set_width(27);
 	button.set_height(27);
 
-	return {button, icon};
+	return {button, icon, iconType};
 };
 
 function recolorIcon(target, color, alpha = 1) {
-	target.icon.style = `icon-size: ${target.button._iconSize ?? 18}px; color: ${color};${alpha < 1 ? ` opacity: ${alpha};` : ''}`;
+	const size = target.button._iconSize ?? 18;
+	const iconType = target.button._iconType ?? target.iconType;
+	const svgUri = loadSvgIcon(iconType, size, color);
+	target.icon.style = `background-image: url("${svgUri}"); background-size: ${size}px ${size}px; width: ${size}px; height: ${size}px;${alpha < 1 ? ` opacity: ${alpha};` : ''}`;
 };
 
 function createCard(theme, createLabel, widgetWidth, widgetHeight) {
@@ -527,10 +571,10 @@ function createCard(theme, createLabel, widgetWidth, widgetHeight) {
 		style: 'spacing: 2px;',
 	});
 
-	card.btnLoop = createControlButton(theme, 'media-playlist-repeat-symbolic');
-	card.btnPrev = createControlButton(theme, 'media-skip-backward-symbolic');
-	card.btnPlay = createControlButton(theme, 'media-playback-start-symbolic', 22, 2, 11);
-	card.btnNext = createControlButton(theme, 'media-skip-forward-symbolic', 22, 2, 11);
+	card.btnLoop = createControlButton(theme, 'repeat');
+	card.btnPrev = createControlButton(theme, 'prev');
+	card.btnPlay = createControlButton(theme, 'play', 22, 2, 11);
+	card.btnNext = createControlButton(theme, 'next', 22, 2, 11);
 
 	const controlsSpacer = new St.Widget({x_expand: true, style: 'min-width: 4px;'});
 
@@ -631,23 +675,24 @@ card.artist.text = _('Play something to get going');
 		card.slider.reactive = seekable;
 		card.slider.opacity = seekable ? 255 : 90;
 
-		card.btnPlay.icon.icon_name = playing ? 'media-playback-pause-symbolic' : 'media-playback-start-symbolic';
-
+		// Update play/pause icon
+		card.btnPlay.iconType = playing ? 'pause' : 'play';
 		recolorIcon(card.btnPlay, theme.text);
-		recolorIcon(card.btnLoop, control ? theme.text : theme.muted, control ? 1 : 0.4);
-		recolorIcon(card.btnPrev, theme.text);
-		recolorIcon(card.btnNext, theme.text);
-
+		
+		// Update loop icon based on state
 		if (loop === 'Track') {
-			card.btnLoop.icon.icon_name = 'media-playlist-repeat-song-symbolic';
+			card.btnLoop.iconType = 'repeat-1';
 			recolorIcon(card.btnLoop, theme.accent);
 		} else if (loop === 'Playlist') {
-			card.btnLoop.icon.icon_name = 'media-playlist-repeat-symbolic';
+			card.btnLoop.iconType = 'repeat';
 			recolorIcon(card.btnLoop, theme.accent);
 		} else {
-			card.btnLoop.icon.icon_name = 'media-playlist-repeat-symbolic';
+			card.btnLoop.iconType = 'repeat';
 			recolorIcon(card.btnLoop, control ? theme.text : theme.muted, control ? 1 : 0.4);
-		};
+		}
+		
+		recolorIcon(card.btnPrev, theme.text);
+		recolorIcon(card.btnNext, theme.text);
 	};
 
 	card.update({title: null, artist: null, artUrl: null, playing: false, position: 0, length: 0,
