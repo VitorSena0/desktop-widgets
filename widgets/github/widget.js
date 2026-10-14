@@ -118,24 +118,24 @@ export function render({ body, widget, theme, sizeForWidget, settings }) {
         ? {
             avatar: 20, username: 15, badge: 14, label: 11, entryWidth: 100,
             footer: 0, month: 0, spacing: 2, gap: 1, daysW: 20,
-            footerFont: 0, dayRows: translateDayRows(DAY_LABEL_ROWS_MINI), maxWeeks: 22,
+            footerFont: 0, dayRows: translateDayRows(DAY_LABEL_ROWS_MINI), maxWeeks: 28,
         }
         : isMiniLarge
             ? {
                 avatar: 24, username: 14, badge: 14, label: 13, entryWidth: 120,
                 footer: 0, month: 11, spacing: 4, gap: 2, daysW: 20,
-                footerFont: 0, dayRows: translateDayRows(DAY_LABEL_ROWS), maxWeeks: 18,
+                footerFont: 0, dayRows: translateDayRows(DAY_LABEL_ROWS), maxWeeks: 26,
             }
         : isLarge
             ? {
                 avatar: 34, username: 16, badge: 16, label: 13, entryWidth: 170,
                 footer: 14, month: 15, spacing: 6, gap: 2, daysW: 30,
-                footerFont: 16, dayRows: translateDayRows(DAY_LABEL_ROWS), maxWeeks: 24,
+                footerFont: 16, dayRows: translateDayRows(DAY_LABEL_ROWS), maxWeeks: 40,
             }
             : {
                 avatar: 28, username: 14, badge: 12, label: 12, entryWidth: 150,
                 footer: 12, month: 14, spacing: 3, gap: 2, daysW: 28,
-                footerFont: 11, dayRows: translateDayRows(DAY_LABEL_ROWS), maxWeeks: 24,
+                footerFont: 11, dayRows: translateDayRows(DAY_LABEL_ROWS), maxWeeks: 36,
             };
 
     const avatarSize = layout.avatar;
@@ -259,7 +259,7 @@ export function render({ body, widget, theme, sizeForWidget, settings }) {
 
     const matrixBody = new St.BoxLayout({
         orientation: Clutter.Orientation.HORIZONTAL,
-        x_align: Clutter.ActorAlign.END,
+        x_align: Clutter.ActorAlign.FILL,
         x_expand: true,
         y_expand: isLarge ? false : true,
         style: `spacing: ${isMini ? 6 : 0}px;`,
@@ -273,7 +273,8 @@ export function render({ body, widget, theme, sizeForWidget, settings }) {
     matrixBody.add_child(dayLabelsColumn);
 
     const gridCanvas = new St.DrawingArea({
-        x_expand: false,
+        x_expand: true,
+        x_align: Clutter.ActorAlign.END,
         style: `background-color: ${theme.background};`,
     });
     matrixBody.add_child(gridCanvas);
