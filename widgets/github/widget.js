@@ -130,7 +130,7 @@ export function render({ body, widget, theme, sizeForWidget, settings }) {
             ? {
                 avatar: 34, username: 16, badge: 16, label: 13, entryWidth: 170,
                 footer: 14, month: 15, spacing: 6, gap: 2, daysW: 30,
-                footerFont: 16, dayRows: translateDayRows(DAY_LABEL_ROWS), maxWeeks: 48,
+                footerFont: 16, dayRows: translateDayRows(DAY_LABEL_ROWS), maxWeeks: 60,
             }
             : {
                 avatar: 28, username: 14, badge: 12, label: 12, entryWidth: 150,
@@ -144,7 +144,7 @@ export function render({ body, widget, theme, sizeForWidget, settings }) {
 
     const mainGaps = isMini ? layout.spacing : layout.spacing * 2;
     const matrixBudget = contentH - layout.avatar - layout.month - layout.footer - mainGaps - 1;
-    const cellMax = isLarge ? 20 : 16;
+    const cellMax = isLarge ? 24 : 16;
     const cellSize = Math.max(4, Math.min(cellMax, Math.floor((matrixBudget - 6 * cellGap) / 7)));
     const weeks = Math.max(6, Math.min(layout.maxWeeks, Math.floor((contentW - dayLabelsWidth + cellGap) / (cellSize + cellGap))));
 
