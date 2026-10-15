@@ -109,6 +109,12 @@ const WIDGET_SIZE_SHAPES = {
   portrait: [1, 2, MAIN_FAMILY], // 1x2
   large: [2, 2, MAIN_FAMILY], // 2x2
   tall: [2, 4, MAIN_FAMILY], // 2x4
+  calendar2x3: [2, 3, MAIN_FAMILY], // 2x3 calendar
+  twobythree: [2, 3, MAIN_FAMILY], // 2x3
+  calendar3x1: [3, 1, MAIN_FAMILY], // 3x1 calendar
+  threebyone: [3, 1, MAIN_FAMILY], // 3x1
+  calendar3x2: [3, 2, MAIN_FAMILY], // 3x2 calendar
+  threebytwo: [3, 2, MAIN_FAMILY], // 3x2
   wide: [4, 2, MAIN_FAMILY], // 4x2
   huge: [4, 4, MAIN_FAMILY], // 4x4
 };
@@ -156,6 +162,15 @@ function sizeLabel(sizeKey) {
             return _('2×2');
         case 'tall':
             return _('2×4');
+        case 'calendar2x3':
+        case 'twobythree':
+            return _('2×3');
+        case 'calendar3x1':
+        case 'threebyone':
+            return _('3×1');
+        case 'calendar3x2':
+        case 'threebytwo':
+            return _('3×2');
         case 'wide':
             return _('4×2');
         case 'huge':

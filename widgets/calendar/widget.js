@@ -13,9 +13,9 @@ import { boxLayoutProps } from '../../utils/gnomeCompat.js';
 export const type = 'calendar';
 export const label = 'Calendar';
 export const stylesheet = 'widgets/calendar/stylesheet.css';
-export const appIds = ['org.gnome.Calendar.desktop'];
+export const appIds = [];
 export const defaultSize = 'medium';
-export const supportedSizes = ['small', 'medium'];
+export const supportedSizes = ['small', 'medium', 'calendar3x1', 'calendar3x2', 'calendar2x3', 'wide'];
 
 const TEXT = '#f5f5f7';
 const SECONDARY = '#86868b';
@@ -71,6 +71,14 @@ export class CalendarEventsClient {
       null,
       Gio.DBusSignalFlags.NONE,
       (_bus, _sender, _path, _iface, _signal, params) => this._onRemoved(params)));
+    this._subIds.push(bus.signal_subscribe(
+      CALENDAR_SERVER_BUS,
+      CALENDAR_SERVER_IFACE,
+      'ClientDisappeared',
+      CALENDAR_SERVER_PATH,
+      null,
+      Gio.DBusSignalFlags.NONE,
+      (_bus, _sender, _path, _iface, _signal, params) => this._onClientDisappeared(params)));
   };
 
   _onEvents(params) {
@@ -82,6 +90,16 @@ export class CalendarEventsClient {
       if (!uid) {
         continue;
       };
+
+      // Recurring event instance: clean up matching parent or stale instances if needed
+      if (!uid.endsWith('\n')) {
+        const parentId = uid.substring(0, uid.lastIndexOf('\n') + 1);
+        for (const id of this._events.keys()) {
+          if (id.startsWith(parentId) && id !== uid && id.endsWith('\n')) {
+            this._events.delete(id);
+          }
+        }
+      }
 
       this._events.set(uid, {
         id: uid,
@@ -100,8 +118,26 @@ export class CalendarEventsClient {
 
     for (const id of ids) {
       this._events.delete(id);
+      for (const key of this._events.keys()) {
+        if (key.startsWith(id)) {
+          this._events.delete(key);
+        }
+      }
     };
 
+    this._notify();
+  };
+
+  _onClientDisappeared(params) {
+    const sourceUid = params?.get_child_value(0)?.get_string() ?? '';
+    const prefix = sourceUid ? `${sourceUid}\n` : '';
+    if (!prefix) return;
+
+    for (const key of this._events.keys()) {
+      if (key.startsWith(prefix)) {
+        this._events.delete(key);
+      }
+    }
     this._notify();
   };
 
@@ -131,7 +167,9 @@ export class CalendarEventsClient {
     };
 
     this._range = {since, until};
-    this._events.clear();
+    if (force) {
+      this._events.clear();
+    };
     this._loaded = false;
     this._armLoadedFallback();
 
@@ -177,14 +215,25 @@ export class CalendarEventsClient {
   };
 
   eventsForDate(date) {
+    const dayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
+    const dayEnd = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1, 0, 0, 0, 0);
+    const dayStartSec = Math.floor(dayStart.getTime() / 1000);
+    const dayEndSec = Math.floor(dayEnd.getTime() / 1000);
+
     const out = [];
 
     for (const event of this._events.values()) {
-      const d = new Date(event.start * 1000);
+      const eStart = event.start;
+      const eEnd = (event.end && event.end > event.start) ? event.end : event.start;
 
-      if (d.getFullYear() === date.getFullYear() &&
-          d.getMonth() === date.getMonth() &&
-          d.getDate() === date.getDate()) {
+      // Event overlaps the day:
+      // (1) Zero-length event within the day interval: eStart >= dayStartSec && eStart < dayEndSec
+      // (2) Multi-second event overlaps the day interval: eEnd > dayStartSec && eStart < dayEndSec
+      const overlaps = (eStart === eEnd)
+        ? (eStart >= dayStartSec && eStart < dayEndSec)
+        : (eEnd > dayStartSec && eStart < dayEndSec);
+
+      if (overlaps) {
         out.push(event);
       };
     };
@@ -196,7 +245,8 @@ export class CalendarEventsClient {
     const out = [];
 
     for (const event of this._events.values()) {
-      if (event.start >= epoch) {
+      const eEnd = (event.end && event.end > event.start) ? event.end : event.start;
+      if (eEnd >= epoch) {
         out.push(event);
       };
     };
@@ -310,16 +360,29 @@ function fitWeekdayFontSize(weekdays, cellWidth, desiredFont, minFont = 9) {
 function noEventsToday() {
 	return _('No events today');
 }
+function isSameDate(a, b) {
+	return a.getFullYear() === b.getFullYear() &&
+		a.getMonth() === b.getMonth() &&
+		a.getDate() === b.getDate();
+}
+function noEventsMessage(date, today) {
+	return isSameDate(date, today) ? noEventsToday() : _('No events on this day');
+}
 
 function isAllDayEvent(event) {
-	// The calendar server doesn't report an all-day flag, so infer it from
-	// timestamps: the event starts at local midnight and spans a whole number
-	// of days (a ±1 h tolerance covers DST transitions).
 	const start = new Date(event.start * 1000);
-	if (start.getHours() !== 0 || start.getMinutes() !== 0 || start.getSeconds() !== 0)
-		return false;
-	const duration = event.end - event.start;
-	return duration >= 82800 && Math.abs(duration % 86400) <= 3600;
+	const duration = (event.end && event.end > event.start) ? event.end - event.start : 0;
+	if (duration <= 0) return false;
+
+	if (start.getHours() === 0 && start.getMinutes() === 0 && start.getSeconds() === 0) {
+		return duration >= 82800 && Math.abs(duration % 86400) <= 3600;
+	}
+
+	if (start.getUTCHours() === 0 && start.getUTCMinutes() === 0 && start.getUTCSeconds() === 0) {
+		return duration >= 82800 && Math.abs(duration % 86400) <= 3600;
+	}
+
+	return duration >= 86400;
 }
 
 function formatEventTime(event, settings) {
@@ -357,15 +420,21 @@ function sourceColor(eventId) {
 	return EVENT_COLORS[Math.abs(hashString(sourceId)) % EVENT_COLORS.length];
 }
 
-function isTomorrowEvent(event, now) {
-	const d = new Date(event.start * 1000);
-	const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-	return d.getFullYear() === tomorrow.getFullYear() &&
-		d.getMonth() === tomorrow.getMonth() &&
-		d.getDate() === tomorrow.getDate();
+function isTomorrowEvent(event, baseDate) {
+	const tomorrow = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate() + 1);
+	const dayStart = new Date(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate(), 0, 0, 0, 0);
+	const dayEnd = new Date(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate() + 1, 0, 0, 0, 0);
+	const dayStartSec = Math.floor(dayStart.getTime() / 1000);
+	const dayEndSec = Math.floor(dayEnd.getTime() / 1000);
+
+	const eStart = event.start;
+	const eEnd = (event.end && event.end > event.start) ? event.end : event.start;
+	return (eStart === eEnd)
+		? (eStart >= dayStartSec && eStart < dayEndSec)
+		: (eEnd > dayStartSec && eStart < dayEndSec);
 };
 
-function calendarCell(text, labelStyle, cellStyle, createLabel, cellWidth, cellHeight, interactive = false, boost = 0, labelModifier = null) {
+function calendarCell(text, labelStyle, cellStyle, createLabel, cellWidth, cellHeight, interactive = false, boost = 0, labelModifier = null, onClick = null) {
 	const binParams = {
 		style_class: 'widget-calendar-cell',
 		x_align: Clutter.ActorAlign.CENTER,
@@ -381,6 +450,7 @@ function calendarCell(text, labelStyle, cellStyle, createLabel, cellWidth, cellH
 	if (interactive) {
 		binParams.reactive = true;
 		binParams.track_hover = true;
+		binParams.can_focus = true;
 	};
 
 	const bin = new St.Bin(binParams);
@@ -395,6 +465,15 @@ function calendarCell(text, labelStyle, cellStyle, createLabel, cellWidth, cellH
 	labelActor.y_align = Clutter.ActorAlign.CENTER;
 	bin.set_size(cellWidth + boost, cellHeight + boost);
 	bin.set_child(labelActor);
+	if (interactive && onClick) {
+		bin._desktopWidgetsSelfClick = true;
+		bin.connect('button-release-event', (_actor, event) => {
+			if (event.get_button() !== 1)
+				return Clutter.EVENT_PROPAGATE;
+			onClick();
+			return Clutter.EVENT_STOP;
+		});
+	};
 	return bin;
 };
 
@@ -402,6 +481,9 @@ function buildGrid(options) {
 	const {
 		now,
 		today,
+		selectedDate,
+		onSelectDate,
+		eventsClient,
 		weekCount,
 		createLabel,
 		cellWidth,
@@ -464,15 +546,31 @@ function buildGrid(options) {
 				continue;
 			};
 
-			const isToday = day === today;
-			const labelStyle = isToday
-				? `font-size: ${dayFont}px; font-weight: 500; color: #ffffff;`
-				: `font-size: ${dayFont}px; font-weight: 500; color: ${text};`;
-			const cellStyle = isToday
+			const currentDay = day;
+			const isToday = currentDay === today;
+			const isSelected = selectedDate && currentDay === selectedDate.getDate() && now.getMonth() === selectedDate.getMonth() && now.getFullYear() === selectedDate.getFullYear();
+			const hasEvents = eventsClient ? eventsClient.eventsForDate(new Date(now.getFullYear(), now.getMonth(), currentDay)).length > 0 : false;
+			const labelStyle = isSelected
+				? `font-size: ${dayFont}px; font-weight: 600; color: #ffffff;`
+				: isToday
+					? `font-size: ${dayFont}px; font-weight: 600; color: ${accent};`
+					: hasEvents
+						? `font-size: ${dayFont}px; font-weight: 600; color: ${text};`
+						: `font-size: ${dayFont}px; font-weight: 500; color: ${text};`;
+			const cellStyle = isSelected
 				? `background-color: ${accent}; border-radius: 999px;`
-				: null;
+				: isToday
+					? `border: 1px solid ${accent}; border-radius: 999px;`
+					: hasEvents
+						? `background-color: rgba(255, 255, 255, 0.08); border-radius: 999px;`
+						: null;
 
-			row.add_child(calendarCell(String(day), labelStyle, cellStyle, createLabel, cellWidth, cellHeight, true, isToday ? TODAY_BOOST : 0));
+			row.add_child(calendarCell(
+				String(currentDay), labelStyle, cellStyle, createLabel,
+				cellWidth, cellHeight, true, isSelected ? TODAY_BOOST : 0,
+				null,
+				() => onSelectDate?.(new Date(now.getFullYear(), now.getMonth(), currentDay))
+			));
 			day++;
 		};
 
@@ -502,7 +600,7 @@ export function style(theme) {
 
 const eventsHandlers = new WeakMap();
 
-function fillEventsBox(container, {eventsClient, now, secondary, createLabel, settings}) {
+function fillEventsBox(container, {eventsClient, now, selectedDate = now, showTomorrowFallback = true, secondary, createLabel, settings}) {
 	container.destroy_all_children();
 
 	const eventLabel = (text, style) => createLabel(
@@ -520,13 +618,12 @@ function fillEventsBox(container, {eventsClient, now, secondary, createLabel, se
 		return;
 	};
 
-	const todayEvents = eventsClient.eventsForDate(now);
-	// Show all today's events, not just 2
-	const shown = [...todayEvents];
+	const dayEvents = eventsClient.eventsForDate(selectedDate);
+	const shown = [...dayEvents];
 
-	// If no events today, show tomorrow's events only (capped)
-	if (!shown.length) {
-		const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+	// Mantém a sugestão de amanhã apenas quando hoje está selecionado.
+	if (!shown.length && showTomorrowFallback) {
+		const tomorrow = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate() + 1);
 		const tomorrowEvents = eventsClient.eventsForDate(tomorrow).slice(0, 3);
 
 		for (const event of tomorrowEvents) {
@@ -535,7 +632,7 @@ function fillEventsBox(container, {eventsClient, now, secondary, createLabel, se
 	};
 
 	if (!shown.length) {
-		container.add_child(eventLabel(noEventsToday()));
+		container.add_child(eventLabel(noEventsMessage(selectedDate, now)));
 		return;
 	};
 
@@ -572,7 +669,7 @@ function fillEventsBox(container, {eventsClient, now, secondary, createLabel, se
 		// "T" + time / "T" / "All day" / start time, pinned to the right of the
 		// summary text (compact tomorrow marker)
 		let timeText;
-		if (isTomorrowEvent(event, now)) {
+		if (isTomorrowEvent(event, selectedDate)) {
 			timeText = isAllDayEvent(event)
 				? _('T')
 				: _('T %s').format(formatEventTime(event, settings));
@@ -607,6 +704,7 @@ export function render({body, createLabel, events, sizeForWidget, widget, theme,
 	const weekdays = weekdayLabels(weekdayFormat);
 	const now = new Date();
 	const today = now.getDate();
+	let selectedDate = new Date(now.getFullYear(), now.getMonth(), today);
 	const first = new Date(now.getFullYear(), now.getMonth(), 1);
 	const days = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
 	const start = first.getDay();
@@ -622,7 +720,9 @@ export function render({body, createLabel, events, sizeForWidget, widget, theme,
 	};
 
 	if (wide) {
-		const rightWidth = Math.round(clamp(widgetWidth * 0.45, 168, 230));
+		const isThreeByOne = widgetWidth >= 550 && widgetHeight <= 220;
+		const isPortrait = widgetHeight > widgetWidth;
+		const rightWidth = (isThreeByOne || isPortrait) ? 180 : Math.round(clamp(widgetWidth * 0.45, 168, 400));
 		const cellWidth = Math.round(20 * (rightWidth / 175));
 		const cellHeight = Math.round(cellWidth * (compact ? 0.95 : 1));
 		const dayFont = Math.max(9, Math.round(DAY_BASE_FONT * (cellWidth / 20)));
@@ -630,65 +730,80 @@ export function render({body, createLabel, events, sizeForWidget, widget, theme,
 		const gap = GAP_BASE;
 
 		const container = new St.BoxLayout(boxLayoutProps({
+			vertical: isPortrait,
 			x_expand: true,
 			y_expand: true,
-			style: `spacing: 20px;`,
-		}));
-
-		const left = new St.BoxLayout(boxLayoutProps({
-			vertical: true,
-			x_expand: true,
-			style: 'spacing: 4px;',
+			style: `spacing: ${isThreeByOne ? 14 : isPortrait ? 10 : 20}px;`,
 		}));
 
 		const weekdayNameColor = useAccentColor ? theme.accent : text;
-		left.add_child(createLabel(
-			uppercaseWeekday(now),
+		const weekdayNameLabel = createLabel(
+			uppercaseWeekday(selectedDate),
 			'widget-calendar-day-name',
-			`font-size: 15px; font-weight: 700; color: ${weekdayNameColor};`));
-		left.add_child(createLabel(
-			String(today),
+			`font-size: 15px; font-weight: 700; color: ${weekdayNameColor};`);
+		const dayNumberLabel = createLabel(
+			String(selectedDate.getDate()),
 			'widget-calendar-day-number',
-			`font-size: 58px; font-weight: 700; color: ${text};`));
-		left.add_child(new St.Widget({y_expand: true}));
+			`font-size: 58px; font-weight: 700; color: ${text};`);
 
 		// Scroll container for events list
 		const eventsScroll = new St.ScrollView({
 			x_expand: true,
-			y_expand: false,
-			style: 'margin-bottom: 6px;',
+			y_expand: true,
+			style: 'margin-top: 4px; margin-bottom: 4px;',
 			overlay_scrollbars: true,
 		});
 		eventsScroll.set_policy(St.PolicyType.NEVER, St.PolicyType.AUTOMATIC);
 
 		const eventsBox = new St.BoxLayout(boxLayoutProps({
 			vertical: true,
+			y_align: Clutter.ActorAlign.START,
 			style: 'spacing: 4px;',
 		}));
 		eventsScroll.set_child(eventsBox);
-		left.add_child(eventsScroll);
 
-		if (events) {
-			const refresh = () => {
-				// Fill regardless of mapping: if the body is unmapped when we
-				// render (freshly created layer, rebuild while the overview is
-				// open), the events box would stay empty forever — the client
-				// is already loaded and requestRange() no-ops on the same
-				// range, so nothing ever re-triggers this again. Populating an
-				// unmapped box is harmless; it shows once mapped.
-				fillEventsBox(eventsBox, {eventsClient: events, now, secondary, createLabel, settings});
-			};
+		let left = null;
+		let middle = null;
+		let topRow = null;
 
-			const dispose = events.onChange(refresh);
-			eventsHandlers.set(body, dispose);
-			body.connect('destroy', dispose);
-			refresh();
+		if (isPortrait) {
+			topRow = new St.BoxLayout(boxLayoutProps({
+				vertical: false,
+				x_expand: true,
+				style: 'spacing: 16px;',
+			}));
+			const dateBox = new St.BoxLayout(boxLayoutProps({
+				vertical: true,
+				x_expand: true,
+				style: 'spacing: 2px;',
+			}));
+			dateBox.add_child(weekdayNameLabel);
+			dateBox.add_child(dayNumberLabel);
+			topRow.add_child(dateBox);
+		} else if (isThreeByOne) {
+			left = new St.BoxLayout(boxLayoutProps({
+				vertical: true,
+				style: 'spacing: 2px; min-width: 100px;',
+			}));
+			left.add_child(weekdayNameLabel);
+			left.add_child(dayNumberLabel);
 
-			const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-			const startEpoch = Math.floor(dayStart.getTime() / 1000);
-			events.requestRange(startEpoch, startEpoch + EVENTS_WINDOW_DAYS * 86400);
+			middle = new St.BoxLayout(boxLayoutProps({
+				vertical: true,
+				x_expand: true,
+				y_expand: true,
+				style: 'spacing: 4px;',
+			}));
+			middle.add_child(eventsScroll);
 		} else {
-			fillEventsBox(eventsBox, {eventsClient: null, now, secondary, createLabel, settings});
+			left = new St.BoxLayout(boxLayoutProps({
+				vertical: true,
+				x_expand: true,
+				style: 'spacing: 4px;',
+			}));
+			left.add_child(weekdayNameLabel);
+			left.add_child(dayNumberLabel);
+			left.add_child(eventsScroll);
 		};
 
 		const right = new St.BoxLayout(boxLayoutProps({
@@ -699,25 +814,94 @@ export function render({body, createLabel, events, sizeForWidget, widget, theme,
 		right.set_width(rightWidth);
 		right.add_child(monthLabel(now, createLabel, dayFont, theme, useAccentColor, cellWidth / 20));
 
-		right.add_child(buildGrid({
-			now,
-			today,
-			weekCount,
-			createLabel,
-			cellWidth,
-			cellHeight,
-			dayFont,
-			weekdayFont,
-			gap,
-			text,
-			secondary,
-			accent: theme.accent,
-			weekdays,
-			useAccentColor,
+		const gridHolder = new St.BoxLayout(boxLayoutProps({
+			vertical: true,
+			x_expand: true,
 		}));
+		right.add_child(gridHolder);
 
-		container.add_child(left);
-		container.add_child(right);
+		const refreshEvents = () => {
+			fillEventsBox(eventsBox, {
+				eventsClient: events ?? null,
+				now,
+				selectedDate,
+				showTomorrowFallback: isSameDate(selectedDate, now),
+				secondary,
+				createLabel,
+				settings,
+			});
+		};
+
+		const refreshGrid = () => {
+			gridHolder.destroy_all_children();
+			gridHolder.add_child(buildGrid({
+				now,
+				today,
+				selectedDate,
+				onSelectDate: handleDateSelected,
+				eventsClient: events ?? null,
+				weekCount,
+				createLabel,
+				cellWidth,
+				cellHeight,
+				dayFont,
+				weekdayFont,
+				gap,
+				text,
+				secondary,
+				accent: theme.accent,
+				weekdays,
+				useAccentColor,
+			}));
+		};
+
+		const handleDateSelected = date => {
+			selectedDate = date;
+			if (weekdayNameLabel?.clutter_text) {
+				weekdayNameLabel.clutter_text.set_text(uppercaseWeekday(date));
+			}
+			if (dayNumberLabel?.clutter_text) {
+				dayNumberLabel.clutter_text.set_text(String(date.getDate()));
+			}
+			refreshEvents();
+			refreshGrid();
+		};
+
+		if (events) {
+			const onEventsChanged = () => {
+				refreshEvents();
+				refreshGrid();
+			};
+
+			const dispose = events.onChange(onEventsChanged);
+			eventsHandlers.set(body, dispose);
+			body.connect('destroy', dispose);
+			refreshEvents();
+
+			const rangeStart = new Date(now.getFullYear(), now.getMonth() - 1, 20);
+			const rangeEnd = new Date(now.getFullYear(), now.getMonth() + 2, 10);
+			events.requestRange(
+				Math.floor(rangeStart.getTime() / 1000),
+				Math.floor(rangeEnd.getTime() / 1000)
+			);
+		} else {
+			refreshEvents();
+		};
+
+		refreshGrid();
+
+		if (isPortrait) {
+			topRow.add_child(right);
+			container.add_child(topRow);
+			container.add_child(eventsScroll);
+		} else if (isThreeByOne) {
+			container.add_child(left);
+			container.add_child(middle);
+			container.add_child(right);
+		} else {
+			container.add_child(left);
+			container.add_child(right);
+		};
 		body.add_child(container);
 		return;
 	};
@@ -732,9 +916,23 @@ export function render({body, createLabel, events, sizeForWidget, widget, theme,
 
 	body.add_child(monthLabel(now, createLabel, dayFont, theme, useAccentColor));
 
-	body.add_child(buildGrid({
+	const gridHolder = new St.BoxLayout(boxLayoutProps({
+		vertical: true,
+		x_expand: true,
+	}));
+	body.add_child(gridHolder);
+
+	const refreshSmallGrid = () => {
+		gridHolder.destroy_all_children();
+		gridHolder.add_child(buildGrid({
 			now,
 			today,
+			selectedDate,
+			onSelectDate: date => {
+				selectedDate = date;
+				refreshSmallGrid();
+			},
+			eventsClient: events ?? null,
 			weekCount,
 			createLabel,
 			cellWidth,
@@ -748,6 +946,9 @@ export function render({body, createLabel, events, sizeForWidget, widget, theme,
 			weekdays,
 			useAccentColor,
 		}));
+	};
+
+	refreshSmallGrid();
 
 	body.add_child(new St.Widget({y_expand: true}));
 };
