@@ -1,0 +1,9 @@
+[Unit]
+Description=Synchronize Google Tasks to GNOME Calendar
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/home/vitorleonardo/.local/bin/sync-google-tasks.py
+StandardOutput=journal
+StandardError=journal
