@@ -66,11 +66,12 @@ function drawLavaMetaballs(area, balls, ballColor) {
 	// Metaball threshold (lowered to reduce blobbiness)
 	const threshold = 1.8;
 	// Grid step (smaller = better quality)
+	const step = 3;
+	const pointRadius = step * 0.8;
 
 	// Walk the grid and draw points where the field strength exceeds the threshold
 	ctx.setSourceRGB(ballColor.r, ballColor.g, ballColor.b);
-	const pointRadius = step * 0.8;
-	
+
 	for (let y = 0; y < height; y += step) {
 		for (let x = 0; x < width; x += step) {
 			const strength = calculateFieldStrength(x, y, balls);

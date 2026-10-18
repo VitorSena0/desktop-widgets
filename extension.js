@@ -108,7 +108,7 @@ const WIDGET_CLICK_TYPES = new Set([
 // against two 1x1 with one gap between them, not wider than them.
 const MAIN_FAMILY = 'main';
 const MINI_FAMILY = 'mini';
-// wide but short
+const COMPACT_FAMILY = 'compact'; // wide but short
 const WIDGET_CELL_SIZES = {
   [MAIN_FAMILY]: CELL_SIZE,
   [MINI_FAMILY]: MINI_CELL_SIZE,
@@ -119,7 +119,7 @@ const WIDGET_SIZE_SHAPES = {
   mini: [2, 1, MINI_FAMILY], // 2x1 mini
   portraitmini: [1, 2, MINI_FAMILY], // 1x2 mini
   minilarge: [2, 2, MINI_FAMILY], // 2x2 mini
-  // 2x1 compact (wide and short)
+  compact: [2, 1, COMPACT_FAMILY], // 2x1 compact (wide and short)
   small: [1, 1, MAIN_FAMILY], // 1x1
   medium: [2, 1, MAIN_FAMILY], // 2x1
   portrait: [1, 2, MAIN_FAMILY], // 1x2
@@ -136,7 +136,15 @@ function widgetSizesFor(gap) {
   for (const [key, [cols, rows, family]] of Object.entries(WIDGET_SIZE_SHAPES)) {
     const base = WIDGET_CELL_SIZES[family];
 
-    sizes[key] = [cols * base + (cols - 1) * gap, rows * base + (rows - 1) * gap];
+    // Rectangular cell support (COMPACT_FAMILY)
+    if (typeof base === 'object') {
+      sizes[key] = [
+        cols * base.width + (cols - 1) * gap,
+        rows * base.height + (rows - 1) * gap,
+      ];
+    } else {
+      sizes[key] = [cols * base + (cols - 1) * gap, rows * base + (rows - 1) * gap];
+    }
   };
 
   return sizes;
