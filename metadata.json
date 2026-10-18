@@ -3,6 +3,7 @@
   "name": "Desktop widgets",
   "settings-schema": "org.gnome.shell.extensions.desktop-widgets-r3nhick",
   "shell-version": [
+    "50",
     "51"
   ],
   "gettext-domain": "desktop-widgets@r3nhick",
