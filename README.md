@@ -21,26 +21,60 @@ A fork of [Widgets](https://github.com/TheRealSourcer/widgets) by TheRealSourcer
 - **Live updates** — most settings apply immediately without restarting GNOME Shell
 - **Translations** — Ukrainian and Russian support
 
-## 🚀 Quick Start
+## 🚀 Installation
+
+### From source
 
 ```bash
-# Install
+# Clone repository
 git clone https://github.com/r3nhick/desktop-widgets.git
 cd desktop-widgets
+
+# Install to extensions directory
 mkdir -p ~/.local/share/gnome-shell/extensions
 cp -r . ~/.local/share/gnome-shell/extensions/desktop-widgets@r3nhick
+```
 
-# Enable (after logging out and back in)
+**Important:** Log out and log back in (or restart GNOME Shell with `Alt+F2` → `r` on X11) to load the extension.
+
+Then enable it:
+
+```bash
 gnome-extensions enable desktop-widgets@r3nhick
 ```
 
-**First steps:**
-1. Open Extensions app → Desktop Widgets → Settings
-2. Click "Add Widget" and choose a widget type
-3. Press `Super+W` to enter Edit Mode and drag widgets around
-4. Click "Arrange widgets" to snap everything to grid
+Or use the Extensions app (GNOME Extensions or Extension Manager).
 
-[📖 See full installation guide](#-installation--setup)
+### First steps
+
+1. **Open Extension Settings**
+   - Extensions app → Desktop Widgets → Settings icon
+   - Or: `gnome-extensions prefs desktop-widgets@r3nhick`
+
+2. **Add Your First Widget**
+   - Click "Add Widget" button
+   - Choose a widget type (e.g., "Clock")
+   - Click "Add" — the widget appears on your desktop
+
+3. **Position Widgets**
+   - Press `Super+W` to enter Edit Mode
+   - Drag widgets to desired positions
+   - Press `Super+W` again to exit
+   - Or click "Arrange widgets" to auto-snap to grid
+
+4. **Configure Widget**
+   - Find the widget in settings list
+   - Click the settings icon next to it
+   - Adjust settings (apply immediately)
+
+### Updating
+
+```bash
+cd ~/.local/share/gnome-shell/extensions/desktop-widgets@r3nhick
+git pull
+```
+
+Then log out and log back in.
 
 ## 📦 Available Widgets (19)
 
@@ -76,6 +110,13 @@ gnome-extensions enable desktop-widgets@r3nhick
 </table>
 
 [📖 See detailed widget descriptions](#-widget-gallery--details)
+
+## 📋 Requirements
+
+- **GNOME Shell** 45+ (tested on 45, 46, 47)
+- **For Weather widget:** GNOME Weather app installed
+- **For Music widget:** Any MPRIS-compatible media player
+- **For GitHub widget:** Internet connection (caches data for offline use)
 
 ## 📖 Documentation
 
@@ -523,73 +564,7 @@ Current weather conditions and temperature using GNOME Weather data.
 </details>
 
 <details>
-<summary><strong>📦 Installation & Setup</strong> — Full installation guide</summary>
-
-## Installation
-
-### From source
-
-```bash
-# Clone repository
-git clone https://github.com/r3nhick/desktop-widgets.git
-cd desktop-widgets
-
-# Install to extensions directory
-mkdir -p ~/.local/share/gnome-shell/extensions
-cp -r . ~/.local/share/gnome-shell/extensions/desktop-widgets@r3nhick
-```
-
-**Important:** Log out and log back in (or restart GNOME Shell with `Alt+F2` → `r` on X11) to load the extension.
-
-Then enable it:
-
-```bash
-gnome-extensions enable desktop-widgets@r3nhick
-```
-
-Or use the Extensions app (GNOME Extensions or Extension Manager).
-
-### First-time Setup
-
-1. **Open Extension Settings**
-   - Method 1: Extensions app → Desktop Widgets → Settings icon
-   - Method 2: `gnome-extensions prefs desktop-widgets@r3nhick`
-
-2. **Add Your First Widget**
-   - Click "Add Widget" button
-   - Choose a widget type from dropdown (e.g., "Clock")
-   - Click "Add" button
-   - The widget appears on your desktop
-
-3. **Position the Widget**
-   - **Option A:** Click "Arrange widgets" to auto-snap all widgets to grid
-   - **Option B:** Press `Super+W` (or configured shortcut) to enter Edit Mode
-     - Drag the widget anywhere
-     - Press `Super+W` again to exit
-
-4. **Configure Widget**
-   - Find the widget in the settings list
-   - Click the settings/gear icon next to it
-   - Adjust settings (they apply immediately)
-
-5. **Add More Widgets**
-   - Repeat steps 2-4 for each widget you want
-   - Common setup: Clock + Weather + Tasks + System Monitor
-
-### Keyboard Shortcut
-
-By default, `Super+W` toggles Edit Mode. To change it:
-
-1. Open Desktop Widgets settings
-2. Find "Edit Mode Keyboard Shortcut"
-3. Click the shortcut field
-4. Press your desired key combination
-5. Click "Set"
-
-</details>
-
-<details>
-<summary><strong>⚙️ Configuration Guide</strong> — All settings explained</summary>
+<summary><strong>⚙️ Advanced Configuration</strong> — Detailed settings and customization</summary>
 
 ## Global Settings
 
