@@ -1,3 +1,11 @@
+/**
+ * Shared logger for the shell and prefs code.
+ *
+ * warn(key, message) throttles duplicate warnings for the given key to one
+ * message per 5 minutes, so a failing subsystem does not spam the journal.
+ * configureLogger() is called by the extension to route warnings through
+ * its own logger; without it warnings fall back to global.log().
+ */
 const WARNING_INTERVAL_MS = 5 * 60 * 1000;
 const warningTimes = new Map();
 let logger = null;

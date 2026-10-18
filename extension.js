@@ -317,6 +317,9 @@ function snap(value) {
   return Math.round(value / GRID_SIZE) * GRID_SIZE;
 };
 
+// Resolve the pixel rect of a widget from its layout entry (size key, x, y).
+// Size keys look up WIDGET_SIZE_SHAPES for [columns, rows, family]; the family
+// picks the base cell size, so "2x1 compact" and "2x1" can differ in height.
 function sizeForWidget(widget, gap) {
   const key = widget.size && WIDGET_SIZE_KEYS.has(widget.size)
     ? widget.size
@@ -688,6 +691,10 @@ class WidgetController {
     this._extension = null;
   };
 
+  // Debounce by key: only the last call within `delay` runs its callback.
+  // Used for bursts of GSettings changes / window events that should trigger
+  // a single rebuild. Timers are tracked in _debounceTimers and removed in
+  // destroy() so nothing fires after disable().
   _debounce(key, callback, delay = 200) {
     if (this._debounceTimers[key]) {
       GLib.source_remove(this._debounceTimers[key].id);
@@ -3310,6 +3317,11 @@ class WidgetController {
 };
 
 export default class DesktopWidgetsExtension extends Extension {
+  // GNOME extension lifecycle. enable() creates the WidgetController (which
+  // builds the widget layer) and must be idempotent across lock screens;
+  // disable() releases everything (timers, signals, stylesheet themes) so the
+  // extension can be re-enabled without restart. Widget actor weights/styles
+  // live in the controller, not here.
   _loadWidgetStylesheets() {
     const theme = St.ThemeContext.get_for_stage(global.stage).get_theme();
     this._widgetStylesheets = [];

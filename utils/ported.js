@@ -2,6 +2,12 @@ import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 
+/**
+ * Helpers ported from the upstream Widgets project, kept here so widget
+ * modules can share them: per-extension data dir + JSON persistence
+ * (loadJsonFromFileAsync / saveJsonToFile), actor-death checks, and CSS
+ * color parsing used to recolor rendered content to the theme.
+ */
 const DATA_DIR_NAME = 'desktop-widgets@r3nhick';
 const ensuredDirectories = new Set();
 

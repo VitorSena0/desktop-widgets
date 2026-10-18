@@ -5,6 +5,16 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
 import { warn } from './logger.js';
 
+/**
+ * Bridges desktop widgets with GNOME workspace-switch animations.
+ *
+ * When the user switches workspaces, GNOME animates the window group; our
+ * widget layer sits above it and would stay static/snap abruptly. This module
+ * locks onto the workspace animation monitor groups and moves the widget
+ * layer along with them, then restores it when the animation ends. The
+ * workspaceAnimation.js module is loaded lazily: it may not exist yet when
+ * the extension enables (and it is not exported on all GNOME versions).
+ */
 let WorkspaceAnimationMonitorGroup = null;
 let animationModulePromise = null;
 
