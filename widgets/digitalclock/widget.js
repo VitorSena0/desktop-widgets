@@ -48,21 +48,6 @@ function escapeMarkup(text) {
 		.replace(/'/g, '&apos;');
 };
 
-function roundedRectangle(cr, x, y, width, height, radius) {
-	const r = Math.min(radius, width / 2, height / 2);
-
-	cr.moveTo(x + r, y);
-	cr.lineTo(x + width - r, y);
-	cr.arc(x + width - r, y + r, r, -Math.PI / 2, 0);
-	cr.lineTo(x + width, y + height - r);
-	cr.arc(x + width - r, y + height - r, r, 0, Math.PI / 2);
-	cr.lineTo(x + r, y + height);
-	cr.arc(x + r, y + height - r, r, Math.PI / 2, Math.PI);
-	cr.lineTo(x, y + r);
-	cr.arc(x + r, y + r, r, Math.PI, Math.PI * 1.5);
-	cr.closePath();
-};
-
 const DigitalClockFace = GObject.registerClass(
 	class DigitalClockFace extends St.DrawingArea {
 		_init(options) {
@@ -154,7 +139,7 @@ const DigitalClockFace = GObject.registerClass(
 			};
 		};
 
-		_drawHorizontal(cr, parts, opts) {
+	_drawHorizontal(cr, parts, opts) {
 			const {width, height, inset, availWidth, availHeight, dpi, textColor} = opts;
 			const main = this._showSeconds
 				? `${parts.hours}:${parts.minutes}:${parts.seconds}`
@@ -230,20 +215,48 @@ const DigitalClockFace = GObject.registerClass(
 			const now = new Date();
 			const parts = this._buildTimeParts(now);
 			const minSide = Math.min(width, height);
-			const inset = clamp(Math.round(minSide * 0.045), 3, 10);
-			const dash = clamp(minSide * 4 / 180, 2.4, 12);
-			const gap = dash * 1.5;
-			const lineWidth = clamp(minSide * 3.5 / 180, 1.6, 5);
+			// Риски ближче до країв віджета — менший відступ контуру.
+			const inset = clamp(Math.round(minSide * 0.02), 2, 6);
 			const frameRadius = clamp(this._radius, 0, Math.floor(minSide / 2));
 			const textColor = colorFromHex(this._theme.text, this._dark ? [1, 1, 1] : [0.1, 0.09, 0.16]);
-			const tickColor = colorFromHex(this._theme.muted, this._dark ? [1, 1, 1] : [0.1, 0.09, 0.16]);
 
-			roundedRectangle(cr, inset, inset, width - inset * 2, height - inset * 2, frameRadius);
-			cr.setLineWidth(lineWidth);
-			cr.setDash([dash, gap], 0);
-			cr.setSourceRGBA(tickColor[0], tickColor[1], tickColor[2], this._dark ? 0.34 : 0.2);
+			// — Риски: як на циферблаті віджета clock — 60 радіальних
+			// рисків (кожні 6°), кінці точно на краї рамки — але ВСІ
+			// ОДНАКОВІ: на «годинник» позначки (12, 6, 9…) не довші,
+			// без диференціації major/minor. —
+			const tickEdgeInset = clamp(minSide * 0.02, 2, 6);
+			const tickLength = clamp(minSide * 0.045, 5, 12);
+			const tickWidth = clamp(minSide * 0.012, 1.0, 2.2);
+			const tickColor = colorFromHex(this._theme.muted, this._dark ? [1, 1, 1] : [0.1, 0.09, 0.16]);
+			const centerX = width / 2;
+			const centerY = height / 2;
+
+			// cairo_line_cap_t: BUTT=0, ROUND=1 (без глобального об'єкта
+			// Cairo — в ES-модулі він не гарантований і падає).
+			// eslint-disable-next-line no-magic-numbers
+			cr.setLineCap(1);
+			cr.setLineWidth(tickWidth);
+			cr.setSourceRGBA(tickColor[0], tickColor[1], tickColor[2], 0.26);
+
+			for (let tick = 0; tick < 60; tick++) {
+				const angle = tick / 60 * Math.PI * 2 - Math.PI / 2;
+				const dx = Math.cos(angle);
+				const dy = Math.sin(angle);
+				// відстань по променю до найближчого краю рамки (як
+				// edgeDistance у clock, але з урахуванням широкої/високої
+				// форми, а не квадрату), мінус той самий відступ.
+				const tX = Math.abs(dx) > 1e-9 ? (width / 2 - tickEdgeInset) / Math.abs(dx) : Infinity;
+				const tY = Math.abs(dy) > 1e-9 ? (height / 2 - tickEdgeInset) / Math.abs(dy) : Infinity;
+				const edge = Math.min(tX, tY);
+				const outer = edge;
+				const inner = edge - tickLength;
+
+				cr.moveTo(centerX + dx * inner, centerY + dy * inner);
+				cr.lineTo(centerX + dx * outer, centerY + dy * outer);
+			};
+
 			cr.stroke();
-			cr.setDash([], 0);
+			cr.setLineCap(0);
 
 			const availWidth = Math.max(10, width - inset * 2 - 6);
 			const availHeight = Math.max(10, height - inset * 2);

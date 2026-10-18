@@ -5,7 +5,7 @@ import GLib from 'gi://GLib';
 import St from 'gi://St';
 
 import { warn } from '../../logger.js';
-import { assetPath } from '../../paths.js';
+import { widgetResourcePath } from '../../paths.js';
 import { gettext as _ } from 'resource:///org/gnome/shell/extensions/extension.js';
 import { boxLayoutProps } from '../../utils/gnomeCompat.js';
 
@@ -36,7 +36,7 @@ let emptyGifPathCached = undefined;
 
 function findGif(names) {
 	for (const name of names) {
-		const bundled = assetPath(name);
+		const bundled = widgetResourcePath('music', name);
 		const local = GLib.build_filenamev([GLib.get_home_dir(), 'Pictures', 'Other', name]);
 
 		for (const path of [bundled, local]) {
@@ -348,51 +348,28 @@ export function style(theme) {
 	return `background-color: ${theme.background}; border-color: ${theme.border}; color: ${theme.text}; padding: 12px 16px;`;
 };
 
-// Map of icon types to SVG filenames
-const ICON_MAP = {
-	'play': 'play.svg',
-	'pause': 'circle-pause.svg',
-	'prev': 'rewind.svg',
-	'next': 'fast-forward.svg',
-	'repeat': 'repeat.svg',
-	'repeat-1': 'repeat-1.svg',
-	'repeat-off': 'repeat-off.svg',
-	'shuffle': 'shuffle.svg',
+// Керуючі іконки: сірі коли неактивні, білі/чорні коли активні
+function controlIconFile(theme, iconName, isActive = false) {
+	const suffix = isActive 
+		? (theme?.dark ? '-white' : '-black')
+		: '';
+	return widgetResourcePath('music', `dw-${iconName}${suffix}.svg`);
 };
 
-function loadSvgIcon(iconType, size, color) {
-	const svgPath = assetPath(`widgets/${ICON_MAP[iconType]}`);
-	if (!svgPath) {
-		warn(`[music] SVG icon not found: ${iconType}`);
-		return null;
-	}
+function controlIcon(theme, iconName, isActive = false) {
+	const file = controlIconFile(theme, iconName, isActive);
 
-	try {
-		const file = Gio.File.new_for_path(svgPath);
-		const [, contents] = file.load_contents(null);
-		let svg = new TextDecoder().decode(contents);
-		
-		// Replace currentColor and existing colors with theme color
-		svg = svg.replace(/stroke="currentColor"/g, `stroke="${color}"`);
-		svg = svg.replace(/fill="currentColor"/g, `fill="${color}"`);
-		svg = svg.replace(/fill="none"/g, `fill="${color}"`);
-		svg = svg.replace(/stroke="[^"]*"/g, `stroke="${color}"`);
-		svg = svg.replace(/fill="[^"]*"/g, `fill="${color}"`);
-		
-		// Encode properly for data URI
-		const encoded = GLib.base64_encode(new TextEncoder().encode(svg));
-		return `data:image/svg+xml;base64,${encoded}`;
-	} catch (e) {
-		warn(`[music] Failed to load SVG icon ${iconType}: ${e.message || e}`);
-		return null;
-	}
-}
+	return file && Gio.File.new_for_path(file).query_exists(null)
+		? Gio.FileIcon.new(Gio.File.new_for_path(file))
+		: null;
+};
 
-function createControlButton(theme, iconType, iconSize = 18, padding = 4, radius = 9) {
-	const svgUri = loadSvgIcon(iconType, iconSize, theme.text);
+function createControlButton(theme, iconName, iconSize = 18, padding = 4, radius = 9, isActive = false) {
+	const gicon = controlIcon(theme, iconName, isActive);
 	
-	const icon = new St.Widget({
-		style: `background-image: url("${svgUri}"); background-size: ${iconSize}px ${iconSize}px; width: ${iconSize}px; height: ${iconSize}px;`,
+	const icon = new St.Icon({
+		gicon,
+		style: `icon-size: ${iconSize}px;`
 	});
 	
 	const button = new St.Button({
@@ -403,19 +380,28 @@ function createControlButton(theme, iconType, iconSize = 18, padding = 4, radius
 	});
 
 	button._iconSize = iconSize;
-	button._iconType = iconType;
+	button._iconName = iconName;
+	button._theme = theme;
+	button._isActive = isActive;
 	button.set_child(icon);
 	button.set_width(27);
 	button.set_height(27);
 
-	return {button, icon, iconType};
+	return {button, icon};
 };
 
-function recolorIcon(target, color, alpha = 1) {
-	const size = target.button._iconSize ?? 18;
-	const iconType = target.button._iconType ?? target.iconType;
-	const svgUri = loadSvgIcon(iconType, size, color);
-	target.icon.style = `background-image: url("${svgUri}"); background-size: ${size}px ${size}px; width: ${size}px; height: ${size}px;${alpha < 1 ? ` opacity: ${alpha};` : ''}`;
+function recolorIcon(target, alpha = 1) {
+	target.icon.style = `icon-size: ${target.button._iconSize ?? 18}px;${alpha < 1 ? ` opacity: ${alpha};` : ''}`;
+};
+
+function setButtonIcon(target, iconName, isActive = false) {
+	const gicon = controlIcon(target.button._theme, iconName, isActive);
+
+	if (gicon) {
+		target.icon.gicon = gicon;
+		target.button._iconName = iconName;
+		target.button._isActive = isActive;
+	}
 };
 
 function createCard(theme, createLabel, widgetWidth, widgetHeight) {
@@ -572,25 +558,32 @@ function createCard(theme, createLabel, widgetWidth, widgetHeight) {
 	};
 
 	card.controls = new St.BoxLayout({
-		x_expand: true,
 		style: 'spacing: 2px;',
+		x_align: Clutter.ActorAlign.CENTER,
 	});
 
-	card.btnLoop = createControlButton(theme, 'repeat');
-	card.btnPrev = createControlButton(theme, 'prev');
+	card.btnLoop = createControlButton(theme, 'repeat', 18, 4, 9);
+	card.btnPrev = createControlButton(theme, 'rewind', 18, 4, 9);
 	card.btnPlay = createControlButton(theme, 'play', 22, 2, 11);
-	card.btnNext = createControlButton(theme, 'next', 22, 2, 11);
-
-	const controlsSpacer = new St.Widget({x_expand: true, style: 'min-width: 4px;'});
+	card.btnNext = createControlButton(theme, 'fast-forward', 18, 4, 9);
 
 	card.controls.add_child(card.btnLoop.button);
 	card.controls.add_child(card.btnPrev.button);
 	card.controls.add_child(card.btnPlay.button);
 	card.controls.add_child(card.btnNext.button);
-	card.controls.add_child(controlsSpacer);
+
+	// Новий значок — правий кут першого рядка правої колонки:
+	// рядок належить тільки йому, решта контенту стоїть нижче.
+	card.statusIcon = new St.Icon({
+		gicon: controlIcon(theme, 'music'),
+		x_align: Clutter.ActorAlign.END,
+		reactive: false,
+		style: 'icon-size: 18px; margin-bottom: 2px;',
+	});
 
 	card.times.add_child(card.timeElapsed);
 	card.times.add_child(card.timeTotal);
+	card.column.add_child(card.statusIcon);
 	card.column.add_child(card.title);
 	card.column.add_child(card.artist);
 	card.column.add_child(card.slider);
@@ -681,23 +674,27 @@ card.artist.text = _('Play something to get going');
 		card.slider.opacity = seekable ? 255 : 90;
 
 		// Update play/pause icon
-		card.btnPlay.iconType = playing ? 'pause' : 'play';
-		recolorIcon(card.btnPlay, theme.text);
+		setButtonIcon(card.btnPlay, playing ? 'circle-pause' : 'play', hasTrack);
+		recolorIcon(card.btnPlay);
+		
+		// Update navigation icons (prev/next) with active state
+		setButtonIcon(card.btnPrev, 'rewind', hasTrack);
+		setButtonIcon(card.btnNext, 'fast-forward', hasTrack);
 		
 		// Update loop icon based on state
 		if (loop === 'Track') {
-			card.btnLoop.iconType = 'repeat-1';
-			recolorIcon(card.btnLoop, theme.accent);
+			setButtonIcon(card.btnLoop, 'repeat-1', hasTrack);
+			recolorIcon(card.btnLoop);
 		} else if (loop === 'Playlist') {
-			card.btnLoop.iconType = 'repeat';
-			recolorIcon(card.btnLoop, theme.accent);
+			setButtonIcon(card.btnLoop, 'repeat', hasTrack);
+			recolorIcon(card.btnLoop);
 		} else {
-			card.btnLoop.iconType = 'repeat';
-			recolorIcon(card.btnLoop, control ? theme.text : theme.muted, control ? 1 : 0.4);
+			setButtonIcon(card.btnLoop, 'repeat-off', hasTrack);
+			recolorIcon(card.btnLoop, control ? 1 : 0.4);
 		}
 		
-		recolorIcon(card.btnPrev, theme.text);
-		recolorIcon(card.btnNext, theme.text);
+		recolorIcon(card.btnPrev);
+		recolorIcon(card.btnNext);
 	};
 
 	card.update({title: null, artist: null, artUrl: null, playing: false, position: 0, length: 0,

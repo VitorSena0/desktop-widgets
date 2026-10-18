@@ -157,7 +157,7 @@ Pack the extension:
 
 ```bash
 gnome-extensions pack \
-  --extra-source=widgets/ --extra-source=schemas/ --extra-source=assets/ --extra-source=utils/ \
+  --extra-source=widgets/ --extra-source=schemas/ --extra-source=icons/ --extra-source=utils/ \
   --extra-source=paths.js --extra-source=logger.js --extra-source=workspaceIntegration.js \
   .
 ```
@@ -173,7 +173,7 @@ When adding a new widget:
 1. Create `widgets/your-widget/widget.js` with required exports
 2. Register it in `extension.js` (WIDGET_MODULES)
 3. Add preferences in `prefs.js` if needed
-4. Add an icon to `assets/icons/your-widget.svg`
+4. Add an icon to `icons/widgets/your-widget.svg`
 5. Update this README
 
 ## License

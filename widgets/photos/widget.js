@@ -7,7 +7,7 @@ import St from 'gi://St';
 import { gettext as _ } from 'resource:///org/gnome/shell/extensions/extension.js';
 
 import { warn } from '../../logger.js';
-import { iconPath } from '../../paths.js';
+import { settingsIconPath } from '../../paths.js';
 import { boxLayoutProps } from '../../utils/gnomeCompat.js';
 
 export const type = 'photos';
@@ -159,7 +159,7 @@ function buildEmptyState(createLabel, onPick, theme, radius = 16) {
 	// Вона не має суфікса -symbolic, тому GTK не заливає її суцільним
 	// кольором і лінійні штрихи лишаються видимими.
 	const iconName = theme?.dark ? 'dw-image-dark' : 'dw-image-light';
-	const iconFile = iconPath(iconName);
+	const iconFile = settingsIconPath(iconName);
 
 	let icon;
 	if (iconFile && Gio.File.new_for_path(iconFile).query_exists(null)) {

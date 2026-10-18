@@ -11,6 +11,7 @@ import {ExtensionPreferences, gettext as _}
 
 import {clearLayout, layoutJson, writeLayout} from './layoutDoc.js';
 import {openWidgetPicker} from './prefs/widgetPickerDialog.js';
+import {settingsIconPath} from './paths.js';
 
 const WIDGET_TYPES = [
     {type: 'applauncher'},
@@ -246,6 +247,12 @@ export default class WidgetsPrefs extends ExtensionPreferences {
         calendarPage.set_title(_('Calendar Widget'));
         calendarPage.set_icon_name('x-office-calendar-symbolic');
         this._addSidebarPage(calendarPage);
+
+        // Weather page
+        const weatherPage = this._createWeatherPage(settings);
+        weatherPage.set_title(_('Weather Widget'));
+        weatherPage.set_icon_name('weather-clear-symbolic');
+        this._addSidebarPage(weatherPage);
 
         // Digital Clock page
         const digitalClockPage = this._createDigitalClockPage(settings);
@@ -1390,6 +1397,20 @@ export default class WidgetsPrefs extends ExtensionPreferences {
         });
         group.add(weekdayRow);
 
+        const HOUR_FORMAT_LABELS = [_('24-hour (14:30)'), _('12-hour (2:30 PM)')];
+        const HOUR_FORMAT_VALUES = ['24', '12'];
+        const hourFormatModel = Gtk.StringList.new(HOUR_FORMAT_LABELS);
+        const hourFormatRow = new Adw.ComboRow({
+            title: _('Time format'),
+            subtitle: _('How event times appear in the calendar'),
+            model: hourFormatModel,
+        });
+        hourFormatRow.set_selected(Math.max(0, HOUR_FORMAT_VALUES.indexOf(settings.get_string('calendar-hour-format'))));
+        hourFormatRow.connect('notify::selected', () => {
+            settings.set_string('calendar-hour-format', HOUR_FORMAT_VALUES[hourFormatRow.selected] ?? '24');
+        });
+        group.add(hourFormatRow);
+
         const accentRow = new Adw.SwitchRow({
             title: _('Use accent color'),
             subtitle: _('Use system or custom accent color from Appearance settings. When disabled, uses neutral gray.'),
@@ -1397,6 +1418,28 @@ export default class WidgetsPrefs extends ExtensionPreferences {
         accentRow.set_active(settings.get_boolean('calendar-use-accent-color'));
         accentRow.connect('notify::active', () => {
             settings.set_boolean('calendar-use-accent-color', accentRow.get_active());
+        });
+        group.add(accentRow);
+
+        page.add(group);
+        return page;
+    }
+
+    _createWeatherPage(settings) {
+        const page = new Adw.PreferencesPage();
+        const group = new Adw.PreferencesGroup({
+            title: _('Weather Widget'),
+            description: _('Preferences for the weather widget on your desktop.'),
+            margin_top: 12,
+        });
+
+        const accentRow = new Adw.SwitchRow({
+            title: _('Use accent color'),
+            subtitle: _('Use system or custom accent color from Appearance settings. When disabled, uses neutral gray.'),
+        });
+        accentRow.set_active(settings.get_boolean('weather-use-accent-color'));
+        accentRow.connect('notify::active', () => {
+            settings.set_boolean('weather-use-accent-color', accentRow.get_active());
         });
         group.add(accentRow);
 
@@ -2721,8 +2764,9 @@ export default class WidgetsPrefs extends ExtensionPreferences {
 
     /**
      * Рядок посилання на сторінці «Про розширення».
-     * `iconName` — базова назва нашої іконки (без суфікса теми), її колір
-     * підставляє системні іконки; сторонні іконки лишаються як є.
+     * `iconName` — базова назва нашої іконки (без суфікса теми), з
+     * `icons/settings/`. GTK не шукає їх у темі (немає -symbolic), тож
+     * вантажимо файл напряму й обираємо варіант -light/-dark за темою.
      */
     _aboutLinkRow(title, iconName, url, subtitle) {
         const row = new Adw.ActionRow({
@@ -2736,8 +2780,18 @@ export default class WidgetsPrefs extends ExtensionPreferences {
 
         const icon = new Gtk.Image({
             valign: Gtk.Align.CENTER,
-            icon_name: iconName,
         });
+        const applyIcon = () => {
+            const dark = Adw.StyleManager.get_default().dark;
+            const file = settingsIconPath(`${iconName}-${dark ? 'dark' : 'light'}`);
+
+            if (file && Gio.File.new_for_path(file).query_exists(null))
+                icon.set_from_file(file);
+            else
+                icon.set_from_icon_name(iconName); // фолбек для сторонніх іконок
+        };
+        applyIcon();
+        Adw.StyleManager.get_default().connect('notify::dark', applyIcon);
         row.add_prefix(icon);
 
         row.add_suffix(new Gtk.Image({

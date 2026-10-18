@@ -9,6 +9,8 @@ import { warn } from '../../logger.js';
 import { gettext as _ } from 'resource:///org/gnome/shell/extensions/extension.js';
 import { boxLayoutProps } from '../../utils/gnomeCompat.js';
 
+const EXTENSION_PATH = GLib.path_get_dirname(GLib.path_get_dirname(GLib.path_get_dirname(import.meta.url.replace('file://', ''))));
+
 export const type = 'weather';
 export const label = 'Weather';
 export const stylesheet = 'widgets/weather/stylesheet.css';
@@ -415,10 +417,12 @@ function temperatureRange(daily, theme, createLabel, scale, size = 11) {
 	return createLabel(
 		_('H:%s L:%s').format(today.high, today.low),
 		'widget-weather-range',
-		`color: ${theme.muted}; font-size: ${scaledFont(size, scale)}px;`);
+		`color: ${theme.muted}; font-size: ${scaledFont(size, scale)}px; font-weight: 400;`);
 };
 
 function buildHeader(rendered, theme, createLabel, scale, opts = {}) {
+	// The main temperature carries the accent color when the toggle allows it.
+	const tempColor = opts.tempColor ?? theme.text;
 	const cityFont = opts.cityFont ?? 17;
 	const cityWeight = opts.cityWeight ?? 800;
 	const tempFont = opts.tempFont ?? 38;
@@ -433,14 +437,39 @@ function buildHeader(rendered, theme, createLabel, scale, opts = {}) {
 		style: 'spacing: 0px;',
 	}));
 
-	left.add_child(createLabel(
+	// City name with navigation icon
+	const cityRow = new St.BoxLayout(boxLayoutProps({
+		vertical: false,
+		x_align: Clutter.ActorAlign.START,
+		style: 'spacing: 6px;',
+	}));
+
+	cityRow.add_child(createLabel(
 		rendered.location,
 		'widget-weather-city',
 		`color: ${theme.text}; font-size: ${scaledFont(cityFont, scale)}px; font-weight: ${cityWeight};`));
+
+	// Navigation icon (use white or black based on theme)
+	const iconName = theme.dark ? 'navigation-white' : 'navigation-black';
+	const iconPath = `${EXTENSION_PATH}/icons/widgets_settings/weather/${iconName}.svg`;
+	const iconFile = Gio.File.new_for_path(iconPath);
+	
+	if (iconFile.query_exists(null)) {
+		const navIcon = new St.Icon({
+			gicon: Gio.icon_new_for_string(iconPath),
+			icon_size: scaledFont(14, scale),
+			y_align: Clutter.ActorAlign.START,
+			style: `margin-top: ${scaledFont(1, scale)}px;`,
+		});
+		cityRow.add_child(navIcon);
+	}
+
+	left.add_child(cityRow);
+
 	left.add_child(createLabel(
 		rendered.temp,
 		'widget-weather-temp-main',
-		`color: ${theme.text}; font-size: ${scaledFont(tempFont, scale)}px; font-weight: ${tempWeight};`));
+		`color: ${tempColor}; font-size: ${scaledFont(tempFont, scale)}px; font-weight: ${tempWeight};`));
 
 	const right = new St.BoxLayout(boxLayoutProps({
 		vertical: true,
@@ -486,6 +515,11 @@ function buildHeader(rendered, theme, createLabel, scale, opts = {}) {
 		right.add_child(range);
 	};
 
+	// With equalColumnWidth (2x1) the header splits into two exact halves;
+	// otherwise the left column keeps its natural width and the rest goes
+	// to a spacer. Fixed widths are used instead of layout-manager
+	// homogeneous settings: St/Clutter allocation quirks made the left
+	// column disappear with those.
 	const header = new St.BoxLayout(boxLayoutProps({
 		style_class: 'widget-weather-header',
 		x_expand: true,
@@ -493,8 +527,15 @@ function buildHeader(rendered, theme, createLabel, scale, opts = {}) {
 		style: 'spacing: 8px;',
 	}));
 
+	if (opts.equalColumnWidth) {
+		left.set_width(opts.equalColumnWidth);
+		right.set_width(opts.equalColumnWidth);
+	};
+
 	header.add_child(left);
-	header.add_child(new St.Widget({x_expand: true}));
+	if (!opts.equalColumnWidth) {
+		header.add_child(new St.Widget({x_expand: true}));
+	};
 	header.add_child(right);
 	return header;
 };
@@ -547,12 +588,19 @@ function buildTempBar(day, allDays, trackWidth = 110) {
 	return track;
 };
 
-function buildWeekList(days, theme, createLabel, scale, barWidth = 110) {
+function buildWeekList(days, theme, createLabel, scale, barWidth = 110, fill = false) {
 	const list = new St.BoxLayout(boxLayoutProps({
 		vertical: true,
 		style_class: 'widget-weather-week',
 		style: `spacing: ${Math.round(6 * scale)}px;`,
 	}));
+
+	// With fill the list itself claims every free pixel under the hourly
+	// strip, and its rows split that height equally — the card has no empty
+	// gap at the bottom.
+	if (fill) {
+		list.y_expand = true;
+	};
 
 	for (const day of days) {
 		const row = new St.BoxLayout(boxLayoutProps({
@@ -562,21 +610,27 @@ function buildWeekList(days, theme, createLabel, scale, barWidth = 110) {
 			y_align: Clutter.ActorAlign.CENTER,
 			style: `spacing: ${Math.round(6 * scale)}px;`,
 		}));
+
+		// With fill the rows share the leftover height of the card equally,
+		// so the week list reaches the bottom edge with no empty gap.
+		if (fill) {
+			row.y_expand = true;
+		};
 		const name = createLabel(
 			day.day,
 			'widget-weather-day-name',
-			`color: ${theme.text}; font-size: ${scaledFont(14, scale)}px; font-weight: 500; width: ${Math.round(48 * scale)}px;`);
+			`color: ${theme.text}; font-size: ${scaledFont(16, scale)}px; font-weight: 500; width: ${Math.round(56 * scale)}px;`);
 
 		name.x_expand = false;
 		name.clutter_text.set_line_wrap(false);
 		name.clutter_text.set_ellipsize(Pango.EllipsizeMode.NONE);
 		row.add_child(name);
-		row.add_child(smallWeatherIcon(day.icon, 'widget-weather-day-icon', theme, scaledFont(20, scale)));
+		row.add_child(smallWeatherIcon(day.icon, 'widget-weather-day-icon', theme, scaledFont(24, scale)));
 
 		const low = createLabel(
 			day.low,
 			'widget-weather-day-temps widget-weather-day-low',
-			`color: ${theme.muted}; font-size: ${scaledFont(14, scale)}px; font-weight: 500; text-align: right; width: ${Math.round(30 * scale)}px;`);
+			`color: ${theme.muted}; font-size: ${scaledFont(18, scale)}px; font-weight: 400; text-align: right; width: ${Math.round(30 * scale)}px;`);
 
 		low.x_expand = false;
 		row.add_child(low);
@@ -585,7 +639,7 @@ function buildWeekList(days, theme, createLabel, scale, barWidth = 110) {
 		const high = createLabel(
 			day.high,
 			'widget-weather-day-temps widget-weather-day-high',
-			`color: ${theme.text}; font-size: ${scaledFont(14, scale)}px; font-weight: 600; text-align: right; width: ${Math.round(30 * scale)}px;`);
+			`color: ${theme.text}; font-size: ${scaledFont(18, scale)}px; font-weight: 600; text-align: right; width: ${Math.round(30 * scale)}px;`);
 
 		high.x_expand = false;
 		row.add_child(high);
@@ -602,15 +656,43 @@ function stripDivider() {
 	});
 };
 
-function buildCompactRegime(body, rendered, theme, createLabel, scale) {
-	body.add_child(createLabel(
+// Compact (1×1) card in the W01 style: location label, a bold accent-colored
+// temperature, then the condition icon, the sky summary and the day's
+// high/low, stacked in a single left-aligned column.
+function buildCompactRegime(body, rendered, theme, createLabel, scale, tempColor) {
+	// City name with navigation icon
+	const cityRow = new St.BoxLayout(boxLayoutProps({
+		vertical: false,
+		x_align: Clutter.ActorAlign.START,
+		style: 'spacing: 5px;',
+	}));
+
+	cityRow.add_child(createLabel(
 		rendered.location,
 		'widget-weather-city',
 		`color: ${theme.text}; font-size: ${scaledFont(16, scale)}px; font-weight: 800;`));
+
+	// Navigation icon (use white or black based on theme)
+	const iconName = theme.dark ? 'navigation-white' : 'navigation-black';
+	const iconPath = `${EXTENSION_PATH}/icons/widgets_settings/weather/${iconName}.svg`;
+	const iconFile = Gio.File.new_for_path(iconPath);
+	
+	if (iconFile.query_exists(null)) {
+		const navIcon = new St.Icon({
+			gicon: Gio.icon_new_for_string(iconPath),
+			icon_size: scaledFont(12, scale),
+			y_align: Clutter.ActorAlign.START,
+			style: `margin-top: ${scaledFont(1, scale)}px;`,
+		});
+		cityRow.add_child(navIcon);
+	}
+
+	body.add_child(cityRow);
+
 	body.add_child(createLabel(
 		rendered.temp,
 		'widget-weather-temp-main',
-		`color: ${theme.text}; font-size: ${scaledFont(42, scale)}px; font-weight: 500;`));
+		`color: ${tempColor ?? theme.accent}; font-size: ${scaledFont(40, scale)}px; font-weight: 600;`));
 	body.add_child(new St.Widget({y_expand: true}));
 
 	const bottom = new St.BoxLayout(boxLayoutProps({
@@ -639,10 +721,21 @@ function buildCompactRegime(body, rendered, theme, createLabel, scale) {
 		'widget-weather-summary',
 		`color: ${theme.text}; font-size: ${scaledFont(13, scale)}px; font-weight: 600;`));
 
+	// H/L: a notch larger than the header range, kept at normal weight.
+	const range = temperatureRange(rendered.daily, theme, createLabel, scale, 12);
+
+	if (range) {
+		bottom.add_child(range);
+	};
+
 	body.add_child(bottom);
 };
 
-export function render({body, widget, createLabel, theme, weather, weatherLocation, sizeForWidget}) {
+export function render({body, widget, createLabel, theme, weather, weatherLocation, sizeForWidget, settings}) {
+	// The main temperature is accent-colored by default; the toggle in the
+	// widget's preferences switches it back to the neutral text color.
+	const useAccentColor = settings?.get_boolean('weather-use-accent-color') ?? true;
+	const tempColor = useAccentColor ? theme.accent : theme.text;
 	const detail = widget.data.detail || _('Weather unavailable');
 	const renderedWeather = weather ?? {
 		temp: formatTemperature(String(detail).split(/\s+/)[0] || '--'),
@@ -656,11 +749,15 @@ export function render({body, widget, createLabel, theme, weather, weatherLocati
 	const [widgetWidth, widgetHeight] = sizeForWidget(widget);
 
 	// Three coherent regimes, decided by width and height:
-	//   compact (width < 340):        city + big temp + icon/condition  (1x1)
+	//   compact (width < 340):        location + accent temp + icon/summary/H-L (1x1)
 	//   wide    (width >= 340, short): header + hourly strip             (2x4)
 	//   large   (width >= 340, tall):  header + hourly + temp-bar week   (4x4)
 	const large = widgetWidth >= 340 && widgetHeight >= 340;
 	const wide = widgetWidth >= 340 && !large;
+	// Exact equal halves for the 2x1 header: content box = cell width minus
+	// the card chrome (18px padding on each side + 1px border), minus the
+	// 8px gap between the two header columns.
+	const equalColumnWidth = Math.floor((widgetWidth - 38 - 8) / 2);
 	// HTML mockups are drawn at 360px (wide/large) and 170px (compact),
 	// but the real widgets are 454px / 220px wide, so scale fonts up
 	// proportionally to keep them looking the same size as in the mockups.
@@ -668,7 +765,7 @@ export function render({body, widget, createLabel, theme, weather, weatherLocati
 	const compactScale = large || wide ? 1 : Math.max(0.9, Math.min(1.6, Math.min(widgetWidth, widgetHeight) / 170));
 
 	if (!wide && !large) {
-		buildCompactRegime(body, renderedWeather, theme, createLabel, compactScale);
+		buildCompactRegime(body, renderedWeather, theme, createLabel, compactScale, tempColor);
 		return;
 	};
 
@@ -689,6 +786,7 @@ export function render({body, widget, createLabel, theme, weather, weatherLocati
 			cityWeight: 800,
 			tempFont: 38,
 			tempWeight: 600,
+			tempColor,
 			condFont: 13,
 			condWeight: 800,
 			condIcon: true,
@@ -712,12 +810,13 @@ export function render({body, widget, createLabel, theme, weather, weatherLocati
 			const headerH = Math.round((17 + 2 + 38) * scale);
 			const availableH = Math.max(1, widgetHeight - Math.round(24 * scale) - headerH - stripContentH - (hourCount >= 4 ? Math.round(14 * scale) : 0) - Math.round(8 * scale));
 			// 2x2 (square) can fit a longer week list, the 4x2 (wide) layout
-			// keeps a 4-day summary: square/tall widgets show as many days as
-			// the available height allows (up to a full week).
+			// keeps a 5-day summary: square/tall widgets show as many days as
+			// the available height allows (up to 8 days, incl. the day after
+			// Saturday); wide widgets show exactly one more than before.
 			const wideLayout = widgetWidth >= widgetHeight * 1.6;
-			let targetDays = Math.min(4, renderedWeather.daily.length);
+			let targetDays = Math.min(5, renderedWeather.daily.length);
 			if (!wideLayout) {
-				const maxDays = Math.min(7, renderedWeather.daily.length);
+				const maxDays = Math.min(8, renderedWeather.daily.length);
 				for (let n = targetDays + 1; n <= maxDays; n++) {
 					if (availableH / (n * 22 + (n - 1) * 6) >= 0.65)
 						targetDays = n;
@@ -728,30 +827,34 @@ export function render({body, widget, createLabel, theme, weather, weatherLocati
 			const days = renderedWeather.daily.slice(0, targetDays);
 			const weeklyScale = Math.max(0.65, Math.min(scale, availableH / (targetDays * 22 + (targetDays - 1) * 6)));
 			const rowSpacing = Math.round(6 * weeklyScale);
-			const rowWidths = Math.round(48 * weeklyScale) + Math.round(20 * weeklyScale) + Math.round(30 * weeklyScale) + Math.round(30 * weeklyScale) + rowSpacing * 4;
+			const rowWidths = Math.round(56 * weeklyScale) + Math.round(20 * weeklyScale) + Math.round(30 * weeklyScale) + Math.round(30 * weeklyScale) + rowSpacing * 4;
 			const barWidth = Math.max(60, widgetWidth - Math.round(36 * weeklyScale) - rowWidths);
 
 			if (days.length > 0) {
 				body.add_child(stripDivider());
-				body.add_child(buildWeekList(days, theme, createLabel, weeklyScale, barWidth));
+				body.add_child(buildWeekList(days, theme, createLabel, weeklyScale, barWidth, true));
 			};
+		} else {
+			// No week data: the old bottom spacer keeps the hourly strip
+			// anchored under the header instead of stretching it.
+			body.add_child(new St.Widget({y_expand: true}));
 		};
-
-		body.add_child(new St.Widget({y_expand: true}));
 		return;
 	};
 
 	// Wide (2x4, Tokyo): city + temp left, condition (icon + text + range) right,
-	// hourly strip at the bottom separated by a top divider.
+	// hourly strip at the bottom.
 	body.add_child(buildHeader(renderedWeather, theme, createLabel, scale, {
 		cityFont: 17,
 		cityWeight: 800,
 		tempFont: 34,
 		tempWeight: 600,
-		condFont: 13,
+		tempColor,
+		condFont: 14,
 		condWeight: 700,
 		condIcon: true,
-		condIconSize: 15,
+		condIconSize: 16,
+		equalColumnWidth,
 	}));
 
 	if (!(hourly.length > 0 && hourCount >= 4)) {
@@ -760,12 +863,11 @@ export function render({body, widget, createLabel, theme, weather, weatherLocati
 	};
 
 	body.add_child(new St.Widget({y_expand: true}));
-	body.add_child(stripDivider());
 	body.add_child(buildHourlyStrip(hourly, theme, createLabel, scale, hourCount, {
-		timeFont: 10,
+		timeFont: 12,
 		timeWeight: 800,
-		iconSize: 24,
-		tempFont: 16,
+		iconSize: 26,
+		tempFont: 18,
 		tempWeight: 700,
 		timeColor: theme.muted,
 	}));

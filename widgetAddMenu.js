@@ -290,7 +290,7 @@ class WidgetAddMenu extends St.BoxLayout {
 		}));
 
 		// SVG іконка
-		const iconPath = `${this._extensionPath}/assets/icons/${widgetMeta.icon}`;
+		const iconPath = `${this._extensionPath}/icons/widgets/${widgetMeta.icon}`;
 		const iconFile = Gio.File.new_for_path(iconPath);
 
 		let icon;

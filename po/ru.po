@@ -1055,6 +1055,9 @@ msgstr "Настройки виджета даты на вашем рабоче�
 msgid "Preferences for the media player widget on your desktop."
 msgstr "Настройки виджета музыкального проигрывателя."
 
+msgid "Preferences for the weather widget on your desktop."
+msgstr "Настройки виджета погоды на вашем рабочем столе."
+
 #: prefs.js:765
 msgid "Preset name"
 msgstr "Название пресета"
@@ -1385,6 +1388,9 @@ msgstr "С"
 #: prefs.js:43
 msgid "Weather"
 msgstr "Погода"
+
+msgid "Weather Widget"
+msgstr "Виджет погоды"
 
 #: widgets/weather/widget.js:273 widgets/weather/widget.js:646
 msgid "Weather unavailable"

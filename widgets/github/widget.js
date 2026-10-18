@@ -128,14 +128,22 @@ export function render({ body, widget, theme, sizeForWidget, settings }) {
             }
         : isLarge
             ? {
+                // 2×2: комірку притиснуто до 15px, щоб крім 5 місяців
+                // влізло ще 5-й рядок статистики — pitch 15+1=16,
+                // weeks = floor((361-30+1)/16) = 20 тижнів (Jun..Oct),
+                // сітка стає на 14px нижчою, рівно під новий чип.
+                // monthLabels: у 2×2 видно рівно 5 міток місяців.
                 avatar: 34, username: 16, badge: 16, label: 13, entryWidth: 170,
-                footer: 14, month: 15, spacing: 6, gap: 2, daysW: 30,
-                footerFont: 16, dayRows: translateDayRows(DAY_LABEL_ROWS), maxWeeks: 48,
+                footer: 14, month: 15, spacing: 6, gap: 1, daysW: 30,
+                footerFont: 16, dayRows: translateDayRows(DAY_LABEL_ROWS), maxWeeks: 48, cellMax: 15, monthLabels: 5,
             }
             : {
+                // 2×1: комірку притиснуто до 10px, щоб у ширину вмістилося
+                // 26 тижнів (6 місяців) замість 5 — pitch 10+2=12,
+                // weeks = floor((361-28+2)/12) = 27. monthLabels: 6 міток.
                 avatar: 28, username: 14, badge: 12, label: 12, entryWidth: 150,
                 footer: 12, month: 14, spacing: 3, gap: 2, daysW: 28,
-                footerFont: 11, dayRows: translateDayRows(DAY_LABEL_ROWS), maxWeeks: 60,
+                footerFont: 11, dayRows: translateDayRows(DAY_LABEL_ROWS), maxWeeks: 60, cellMax: 10, monthLabels: 6,
             };
 
     const avatarSize = layout.avatar;
@@ -144,7 +152,7 @@ export function render({ body, widget, theme, sizeForWidget, settings }) {
 
     const mainGaps = isMini ? layout.spacing : layout.spacing * 2;
     const matrixBudget = contentH - layout.avatar - layout.month - layout.footer - mainGaps - 1;
-    const cellMax = isLarge ? 20 : 16;
+    const cellMax = layout.cellMax ?? (isLarge ? 20 : 16);
     const cellSize = Math.max(4, Math.min(cellMax, Math.floor((matrixBudget - 6 * cellGap) / 7)));
     const weeks = Math.max(6, Math.min(layout.maxWeeks, Math.floor((contentW - dayLabelsWidth + cellGap) / (cellSize + cellGap))));
 
@@ -160,6 +168,9 @@ export function render({ body, widget, theme, sizeForWidget, settings }) {
     let currentStreak = 0;
     let longestStreak = 0;
     let todayCount = 0;
+    let activeDaysCount = 0;
+    let bestDayCount = 0;
+    let bestDayLabel = '—';
 
     const setProfileUrl = valid => {
         const url = valid ? profileUrlFor(username) : null;
@@ -300,12 +311,15 @@ export function render({ body, widget, theme, sizeForWidget, settings }) {
     matrixBody.add_child(gridCanvas);
 
     // --- STATS (for large size only) ---
+    // statsBox тягнеться на весь залишок висоти між сіткою і футером,
+    // тобто чипи ділять простір порівну — жодних "дірок" перед футером.
     let statsBox = null;
     if (isLarge) {
         statsBox = new St.BoxLayout({
             orientation: Clutter.Orientation.VERTICAL,
             x_expand: true,
-            style: `spacing: 6px; margin-top: 4px;`,
+            y_expand: true,
+            style: `spacing: 5px; margin-top: 0px;`,
         });
         mainBox.add_child(statsBox);
     }
@@ -389,51 +403,79 @@ export function render({ body, widget, theme, sizeForWidget, settings }) {
         monthLabelsRow.destroy_all_children();
         const monthBottomMargin = isMini ? 0 : 4;
         monthLabelsRow.style = `height: ${layout.month}px; margin-bottom: ${monthBottomMargin}px;`;
-        
-        let curMonth = -1;
-        let lastLabelEnd = -50;
+
         const minLabelSpacing = isLarge ? 20 : 30;
-        
+        const estimatedLabelWidth = 30;
+        const maxLabelX = contentW - dayLabelsWidth - estimatedLabelWidth;
+
+        // Перша колонка (тиждень), у якій починається кожен місяць сітки.
+        let prevMonth = -1;
+        const monthStarts = [];
         for (let w = 0; w < weeksToRender; w++) {
-            const weekStartUnix = startUnix + w * 7 * 86400;
-            
             for (let d = 0; d < 7; d++) {
-                const dayUnix = weekStartUnix + d * 86400;
-                const dt = GLib.DateTime.new_from_unix_local(dayUnix);
+                const dt = GLib.DateTime.new_from_unix_local(startUnix + (w * 7 + d) * 86400);
                 const month = dt.get_month() - 1;
-                
-                if (month === curMonth) continue;
-                
-                const columnIndex = w;
-                const xPos = columnIndex * pitch;
-                
-                // Add left margin for first month equal to right margin for last month
-                const effectiveXPos = xPos + (curMonth === -1 ? 4 : 0);
-                
-                if (effectiveXPos < lastLabelEnd + minLabelSpacing) {
-                    continue;
+
+                if (month === prevMonth) continue;
+
+                prevMonth = month;
+
+                if (monthStarts.length && monthStarts[monthStarts.length - 1].w === w) {
+                    // Обидва місяці почалися в одному тижні — лишаємо новіший.
+                    monthStarts[monthStarts.length - 1].month = month;
+                } else {
+                    monthStarts.push({w, month});
                 }
-                
-                const estimatedLabelWidth = 30;
-                if (dayLabelsWidth + effectiveXPos + estimatedLabelWidth > contentW) {
-                    break;
-                }
-                
-                curMonth = month;
-                
-                const lbl = new St.Label({
-                    text: monthNames()[month],
-                    x_align: Clutter.ActorAlign.START,
-                    y_align: Clutter.ActorAlign.CENTER,
-                    style: `font-size: ${layout.month}px; font-weight: 700; color: ${textColor}; opacity: ${SECONDARY_OPACITY};`,
-                });
-                
-                lbl.translation_x = effectiveXPos;
-                monthLabelsRow.add_child(lbl);
-                
-                lastLabelEnd = effectiveXPos + estimatedLabelWidth;
                 break;
             }
+        }
+
+        // Мітка не має залазити на попередню: якщо тижневі колонки сусідніх
+        // місяців стоять дуже близько (частковий місяць на краю сітки),
+        // зсуваємо нову мітку на мінімальний відступ, а не викидаємо її.
+        const placed = [];
+        for (const start of monthStarts) {
+            let x = start.w * pitch;
+
+            if (!placed.length) x += 4;
+            if (x > maxLabelX) x = maxLabelX;
+
+            if (placed.length && x < placed[placed.length - 1].x + minLabelSpacing) {
+                x = placed[placed.length - 1].x + minLabelSpacing;
+            }
+
+            placed.push({x, month: start.month});
+        }
+
+        // Якщо для розміру задана кількість міток і їх вийшло більше —
+        // обрізаємо НАЙСТАРІШІ (часткові місяці на лівому краю сітки).
+        if (Number.isFinite(layout.monthLabels) && placed.length > layout.monthLabels) {
+            placed.splice(0, placed.length - layout.monthLabels);
+        }
+
+        // Рівний інтервал між мітками: перша й остання стоят на своїх
+        // позиціях, проміжні розподіляються рівномірно між ними (інакше
+        // відступ скакатиме 48/60px — кількість тижнів у місяці різна).
+        if (placed.length > 1) {
+            const firstX = placed[0].x;
+            const lastX = placed[placed.length - 1].x;
+            const step = (lastX - firstX) / (placed.length - 1);
+
+            placed.forEach((p, i) => {
+                p.x = Math.round(firstX + step * i);
+            });
+        }
+
+        for (const {x, month} of placed) {
+            const lbl = new St.Label({
+                text: monthNames()[month],
+                x_align: Clutter.ActorAlign.START,
+                y_align: Clutter.ActorAlign.CENTER,
+                style: `font-size: ${layout.month}px; font-weight: 700; color: ${textColor}; opacity: ${SECONDARY_OPACITY};`,
+            });
+
+            lbl.translation_x = x;
+            monthLabelsRow.add_child(lbl);
         }
     }
 
@@ -446,7 +488,7 @@ export function render({ body, widget, theme, sizeForWidget, settings }) {
 
             const lbl = new St.Label({
                 text: layout.dayRows[row],
-                style: `font-size: ${layout.label}px; font-weight: 700; color: ${textColor}; opacity: ${SECONDARY_OPACITY};`,
+                style: `font-size: ${layout.label}px; font-weight: 800; color: ${textColor}; opacity: ${SECONDARY_OPACITY};`,
             });
 
             // Disable text ellipsize to show full day names
@@ -536,7 +578,7 @@ export function render({ body, widget, theme, sizeForWidget, settings }) {
         let streak = 0;
         let longest = 0;
         let tempStreak = 0;
-        let total = 0;
+        let active = 0;
 
         // Compute streaks from today backwards
         const checkDate = GLib.DateTime.new_now_local();
@@ -544,14 +586,36 @@ export function render({ body, widget, theme, sizeForWidget, settings }) {
             const d = checkDate.add_days(-i);
             const key = d.format('%Y-%m-%d');
             const count = byDate.get(key) ?? 0;
-            total += count;
             if (count > 0) {
+                active++;
                 tempStreak++;
                 if (tempStreak > longest) longest = tempStreak;
                 if (i === 0 || streak === i) streak = tempStreak;
             } else {
                 tempStreak = 0;
             }
+        }
+
+        // Найпродуктивніший день серед усіх днів, які є у даних GitHub.
+        let bestCount = 0;
+        let bestKey = null;
+        for (const [key, count] of byDate) {
+            if (count > bestCount) {
+                bestCount = count;
+                bestKey = key;
+            }
+        }
+
+        activeDaysCount = active;
+        bestDayCount = bestCount;
+        // 'YYYY-MM-DD' розбираю вручну: GLib.DateTime.new_from_iso8601 +
+        // format_utf8 — ловушка GJS (format_utf8 не існує і computeStats
+        // падав, залишаючи блок статистики порожнім).
+        if (bestKey) {
+            const [, bM, bD] = bestKey.split('-').map(Number);
+            bestDayLabel = `${String(bD).padStart(2, '0')} ${monthNames()[bM - 1] ?? ''}`;
+        } else {
+            bestDayLabel = '—';
         }
 
         currentStreak = streak;
@@ -570,18 +634,22 @@ export function render({ body, widget, theme, sizeForWidget, settings }) {
             { icon: 'emoji-recent-symbolic', label: _('Today'), value: String(todayCount) },
             { icon: 'media-playlist-consecutive-symbolic', label: _('Current streak'), value: `${currentStreak}d` },
             { icon: 'starred-symbolic', label: _('Longest streak'), value: `${longestStreak}d` },
+            { icon: 'view-grid-symbolic', label: _('Active days'), value: `${activeDaysCount}d / 365` },
+            { icon: 'weather-clear-symbolic', label: _('Best day'), value: `${formatCount(bestDayCount)} · ${bestDayLabel}` },
         ];
 
+        // Кожен показник — окремий чип на всю ширину: 4 чипи × ~30px
+        // влазить у статбюджет 2×2 (~138px) без переповнення.
         for (const stat of statsData) {
-            const row = new St.BoxLayout({
-                orientation: Clutter.Orientation.HORIZONTAL,
+            const chip = new St.BoxLayout({
                 x_expand: true,
-                style: statBg + ` border-radius: 10px; padding: 6px 12px; spacing: 8px;`,
+                y_expand: true,
+                style: statBg + ` border-radius: 10px; padding: 3px 12px; spacing: 10px;`,
             });
 
             const icon = new St.Icon({
                 icon_name: stat.icon,
-                icon_size: 14,
+                icon_size: 16,
                 style: `color: ${accentHex};`,
                 y_align: Clutter.ActorAlign.CENTER,
             });
@@ -590,19 +658,19 @@ export function render({ body, widget, theme, sizeForWidget, settings }) {
                 text: stat.label,
                 x_expand: true,
                 y_align: Clutter.ActorAlign.CENTER,
-                style: `font-size: 16px; font-weight: 400; color: ${textColor}; opacity: ${SECONDARY_OPACITY};`,
+                style: `font-size: 15px; font-weight: 700; color: ${textColor}; opacity: ${SECONDARY_OPACITY};`,
             });
 
             const valueWidget = new St.Label({
                 text: stat.value,
                 y_align: Clutter.ActorAlign.CENTER,
-                style: `font-size: 14px; font-weight: 700; color: ${textColor};`,
+                style: `font-size: 15px; font-weight: 700; color: ${textColor};`,
             });
 
-            row.add_child(icon);
-            row.add_child(labelWidget);
-            row.add_child(valueWidget);
-            statsBox.add_child(row);
+            chip.add_child(icon);
+            chip.add_child(labelWidget);
+            chip.add_child(valueWidget);
+            statsBox.add_child(chip);
         }
     }
 
@@ -787,6 +855,9 @@ export function render({ body, widget, theme, sizeForWidget, settings }) {
             currentStreak = 0;
             longestStreak = 0;
             todayCount = 0;
+            activeDaysCount = 0;
+            bestDayCount = 0;
+            bestDayLabel = '—';
         }
         saveJsonToFile(dataFilePath, { username });
         updateHeader();

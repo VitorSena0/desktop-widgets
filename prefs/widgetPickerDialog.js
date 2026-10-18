@@ -281,7 +281,7 @@ export const WidgetPickerDialog = GObject.registerClass({
 		//
 		// Чому не FlowBox: при homogeneous:true він вирівнює картки за найширшою
 		// в категорії. Найширшою робить не width_request, а власний розмір
-		// текстури всередині Gtk.Picture - SVG-и в assets/icons мають
+		// текстури всередині Gtk.Picture - SVG-и в icons/widgets мають
 		// інтринсивні розміри аж до 480x270. У Productivity лежить
 		// app_launcher.svg (480px), тому FlowBox вирішував, що вміститься лише
 		// одна картка на ряд, і розтягував її на всю ширину. Grid від розміру
@@ -342,13 +342,13 @@ export const WidgetPickerDialog = GObject.registerClass({
 		previewButton.set_child(cardBox);
 
 		// SVG іконка
-		const iconPath = `${this._extensionPath}/assets/icons/${widgetMeta.icon}`;
+		const iconPath = `${this._extensionPath}/icons/widgets/${widgetMeta.icon}`;
 		const iconFile = Gio.File.new_for_path(iconPath);
 
 		let iconWidget;
 		if (iconFile.query_exists(null)) {
 			// Масштабуємо під час завантаження, а не віддаємо оригінальну
-			// текстуру. SVG-и в assets/icons мають інтринсивні розміри до
+			// текстуру. SVG-и в icons/widgets мають інтринсивні розміри до
 			// 480x270, і Gtk.Picture з такою текстурою робить картку
 			// "ширшою за налаштовану": width_request задає лише МІНІМУМ, а
 			// natural width лишається 480px. У підсумку картка в FlowBox

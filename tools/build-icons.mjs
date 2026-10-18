@@ -26,7 +26,7 @@ import {join, basename} from 'node:path';
 const SRC = process.argv[2] || join(
     process.env.HOME, 'Downloads', 'Icons');
 const OUT = join(
-    import.meta.dirname, '..', 'icons', 'hicolor', 'scalable', 'actions');
+    import.meta.dirname, '..', 'icons', 'settings');
 
 /** Товщина контуру. 1.5 — щоб лінії weren't злипались на 16px. */
 const STROKE_WIDTH = '1.5';

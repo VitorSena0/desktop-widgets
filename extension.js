@@ -489,6 +489,9 @@ class WidgetController {
       'changed::edit-mode-binding', () => this._registerEditModeBinding(),
       'changed::calendar-weekday-format', () => this._refreshCalendarWeekdays(),
       'changed::calendar-use-accent-color', () => this._refreshCalendarWeekdays(),
+      // Re-render the weather cards in place so the temperature flips between
+      // accent and neutral text color the moment the toggle flips.
+      'changed::weather-use-accent-color', () => this._refreshWeatherViews(),
       'changed::digitalclock-hour-format', () => this._scheduleAppearance('refresh'),
       'changed::digitalclock-show-seconds', () => this._scheduleAppearance('refresh'),
       'changed::digitalclock-show-ampm', () => this._scheduleAppearance('refresh'),
@@ -2594,6 +2597,21 @@ class WidgetController {
     };
 
     const now = Date.now();
+    const DOUBLE_CLICK_TIME = 400; // milliseconds
+
+    // Check for double-click
+    if (!this._lastClickTime || !this._lastClickWidget || 
+        this._lastClickWidget !== view.widget.id || 
+        now - this._lastClickTime > DOUBLE_CLICK_TIME) {
+      // First click or timeout - just store the time
+      this._lastClickTime = now;
+      this._lastClickWidget = view.widget.id;
+      return Clutter.EVENT_STOP;
+    }
+
+    // Second click within double-click time - open app
+    this._lastClickTime = 0;
+    this._lastClickWidget = null;
 
     if (now - this._lastAppLaunchAt > 500) {
       this._lastAppLaunchAt = now;

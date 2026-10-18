@@ -10,6 +10,8 @@ import { clamp } from '../../utils.js';
 import { warn } from '../../logger.js';
 import { boxLayoutProps } from '../../utils/gnomeCompat.js';
 
+const EXTENSION_PATH = GLib.path_get_dirname(GLib.path_get_dirname(GLib.path_get_dirname(import.meta.url.replace('file://', ''))));
+
 export const type = 'calendar';
 export const label = 'Calendar';
 export const stylesheet = 'widgets/calendar/stylesheet.css';
@@ -32,6 +34,11 @@ const CALENDAR_SERVER_PATH = '/org/gnome/Shell/CalendarServer';
 const CALENDAR_SERVER_IFACE = 'org.gnome.Shell.CalendarServer';
 const EVENTS_REFRESH_SECONDS = 300;
 const EVENTS_WINDOW_DAYS = 35;
+const SWIPE_THRESHOLD = 30;
+const ANIMATION_DURATION = 250;
+
+const VIEW_CALENDAR = 0;
+const VIEW_EVENTS = 1;
 
 export class CalendarEventsClient {
   constructor() {
@@ -322,18 +329,18 @@ function isAllDayEvent(event) {
 	return duration >= 82800 && Math.abs(duration % 86400) <= 3600;
 }
 
-function formatEventTime(event, settings) {
+function formatEventTime(event, settings, forceShowMinutes = false) {
 	const start = new Date(event.start * 1000);
 	const minutes = String(start.getMinutes()).padStart(2, '0');
-	const hourFormat = settings?.get_string('digitalclock-hour-format') ?? '24';
+	const hourFormat = settings?.get_string('calendar-hour-format') ?? '24';
 	if (hourFormat === '12') {
 		const hours = ((start.getHours() + 11) % 12) + 1;
-		const showAmPm = settings?.get_boolean('digitalclock-show-ampm') ?? true;
 		const amPm = start.getHours() < 12 ? _('AM') : _('PM');
-		// Skip minutes when they're :00 so the label stays short and the
-		// AM/PM marker fits in narrow rows ("9 PM" instead of "9:00 PM").
-		const time = start.getMinutes() === 0 ? String(hours) : `${hours}:${minutes}`;
-		return `${time}${showAmPm ? ` ${amPm}` : ''}`;
+		// For events list, always show minutes and AM/PM
+		const time = (forceShowMinutes || start.getMinutes() !== 0)
+			? `${hours}:${minutes}`
+			: String(hours);
+		return `${time} ${amPm}`;
 	}
 	return `${String(start.getHours()).padStart(2, '0')}:${minutes}`;
 }
@@ -414,6 +421,7 @@ function buildGrid(options) {
 		accent,
 		weekdays,
 		useAccentColor,
+		cellsInteractive = true,
 	} = options;
 	const grid = new St.BoxLayout(boxLayoutProps({
 		vertical: true,
@@ -472,7 +480,7 @@ function buildGrid(options) {
 				? `background-color: ${accent}; border-radius: 999px;`
 				: null;
 
-			row.add_child(calendarCell(String(day), labelStyle, cellStyle, createLabel, cellWidth, cellHeight, true, isToday ? TODAY_BOOST : 0));
+			row.add_child(calendarCell(String(day), labelStyle, cellStyle, createLabel, cellWidth, cellHeight, cellsInteractive, isToday ? TODAY_BOOST : 0));
 			day++;
 		};
 
@@ -500,13 +508,88 @@ export function style(theme) {
 	return `background-color: ${theme.background}; border-color: ${theme.border}; color: ${theme.text}; border-radius: 16px; padding: 18px 16px;`;
 };
 
+function buildCalendarView(options) {
+	const {createLabel, now, today, weekCount, cellWidth, cellHeight, dayFont, weekdayFont, gap, text, secondary, theme, useAccentColor, weekdays, cellsInteractive = true} = options;
+
+	const view = new St.BoxLayout(boxLayoutProps({
+		vertical: true,
+		x_expand: true,
+		y_expand: true,
+	}));
+
+	view.add_child(monthLabel(now, createLabel, dayFont, theme, useAccentColor));
+
+	view.add_child(buildGrid({
+		now,
+		today,
+		weekCount,
+		createLabel,
+		cellWidth,
+		cellHeight,
+		dayFont,
+		weekdayFont,
+		gap,
+		text,
+		secondary,
+		accent: theme.accent,
+		weekdays,
+		useAccentColor,
+		cellsInteractive,
+	}));
+
+	view.add_child(new St.Widget({y_expand: true}));
+	return view;
+};
+
+function buildEventsView(options) {
+	const {createLabel, eventsClient, now, text, secondary, settings, width, theme} = options;
+
+	const view = new St.BoxLayout(boxLayoutProps({
+		vertical: true,
+		x_expand: true,
+		y_expand: true,
+		style: 'spacing: 8px;',
+	}));
+
+	// Header
+	const header = createLabel(
+		_('Events'),
+		'widget-calendar-month',
+		`font-size: 13px; font-weight: 800; color: ${text};`
+	);
+	header.x_expand = true;
+	header.x_align = Clutter.ActorAlign.START;
+	header.clutter_text.set_line_wrap(false);
+	header.clutter_text.set_ellipsize(Pango.EllipsizeMode.NONE);
+	view.add_child(header);
+
+	// Events scroll container
+	const eventsScroll = new St.ScrollView({
+		x_expand: true,
+		y_expand: true,
+		overlay_scrollbars: true,
+	});
+	eventsScroll.set_policy(St.PolicyType.NEVER, St.PolicyType.AUTOMATIC);
+
+	const eventsBox = new St.BoxLayout(boxLayoutProps({
+		vertical: true,
+		style: 'spacing: 6px;',
+	}));
+	eventsScroll.set_child(eventsBox);
+
+	fillEventsBox(eventsBox, {eventsClient, now, secondary, createLabel, settings, text, theme});
+
+	view.add_child(eventsScroll);
+	return {view, eventsBox};
+};
+
 const eventsHandlers = new WeakMap();
 
-function fillEventsBox(container, {eventsClient, now, secondary, createLabel, settings}) {
+function fillEventsBox(container, {eventsClient, now, secondary, createLabel, settings, text, theme}) {
 	container.destroy_all_children();
 
-	const eventLabel = (text, style) => createLabel(
-		text,
+	const eventLabel = (labelText, style) => createLabel(
+		labelText,
 		'widget-calendar-events',
 		style ?? `font-size: 15px; font-weight: 600; color: ${secondary};`);
 
@@ -521,18 +604,11 @@ function fillEventsBox(container, {eventsClient, now, secondary, createLabel, se
 	};
 
 	const todayEvents = eventsClient.eventsForDate(now);
-	// Show all today's events, not just 2
-	const shown = [...todayEvents];
+	const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+	const tomorrowEvents = eventsClient.eventsForDate(tomorrow);
 
-	// If no events today, show tomorrow's events only (capped)
-	if (!shown.length) {
-		const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-		const tomorrowEvents = eventsClient.eventsForDate(tomorrow).slice(0, 3);
-
-		for (const event of tomorrowEvents) {
-			shown.push(event);
-		};
-	};
+	// Show all today's events + all tomorrow's events
+	const shown = [...todayEvents, ...tomorrowEvents];
 
 	if (!shown.length) {
 		container.add_child(eventLabel(noEventsToday()));
@@ -540,62 +616,68 @@ function fillEventsBox(container, {eventsClient, now, secondary, createLabel, se
 	};
 
 	for (const event of shown) {
-		const text = event.summary && event.summary.trim() ? event.summary.trim() : '…';
-		// Stable color per calendar source (like the Calendar app)
-		const eventColor = sourceColor(event.id);
+		const eventText = event.summary && event.summary.trim() ? event.summary.trim() : '…';
+		// Use accent color for the event indicator line
+		const eventColor = theme?.accent ?? '#ff6600';
 
-		// Event item container with border and dark background
+		// Event item container - vertical layout like in CALD design
 		const eventItem = new St.BoxLayout(boxLayoutProps({
 			vertical: false,
 			style_class: 'widget-calendar-event-item',
-			style: `background-color: rgba(0, 0, 0, 0.25); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 6px; padding: 0; spacing: 0;`,
+			style: `spacing: 0;`,
 		}));
 
-		// Colored vertical indicator line on the left
+		// Colored vertical indicator line on the left (4px like in Lua)
 		const colorBar = new St.Widget({
 			style_class: 'widget-calendar-event-color',
-			style: `background-color: ${eventColor}; width: 3px; border-radius: 6px 0 0 6px; min-height: 26px;`,
+			style: `background-color: ${eventColor}; width: 4px; border-radius: 2px; min-height: 28px;`,
 		});
 		eventItem.add_child(colorBar);
 
-		// Event text label
+		// Text container (title + subtitle)
+		const textBox = new St.BoxLayout(boxLayoutProps({
+			vertical: true,
+			x_expand: true,
+			style: `spacing: 2px; padding-left: 8px;`,
+		}));
+
+		// Event title
 		const eventTextLabel = createLabel(
-			text,
+			eventText,
 			'widget-calendar-events',
-			`font-size: 13px; font-weight: 500; color: ${secondary}; padding: 4px 8px;`
+			`font-size: 15px; font-weight: 600; color: ${text};`
 		);
 		eventTextLabel.clutter_text.ellipsize = Pango.EllipsizeMode.END;
 		eventTextLabel.clutter_text.line_wrap = false;
 		eventTextLabel.x_expand = true;
-		eventItem.add_child(eventTextLabel);
+		textBox.add_child(eventTextLabel);
 
-		// "T" + time / "T" / "All day" / start time, pinned to the right of the
-		// summary text (compact tomorrow marker)
-		let timeText;
-		if (isTomorrowEvent(event, now)) {
-			timeText = isAllDayEvent(event)
-				? _('T')
-				: _('T %s').format(formatEventTime(event, settings));
+		// Subtitle (time for all events, or "All day")
+		let subtitleText;
+		if (isAllDayEvent(event)) {
+			subtitleText = isTomorrowEvent(event, now)
+				? _('Tomorrow')
+				: _('All day');
 		} else {
-			timeText = isAllDayEvent(event)
-				? _('All day')
-				: formatEventTime(event, settings);
+			// Show time for both today and tomorrow events (always with minutes and AM/PM)
+			const timeStr = formatEventTime(event, settings, true);
+			subtitleText = isTomorrowEvent(event, now)
+				? _('Tomorrow, %s').format(timeStr)
+				: timeStr;
 		};
-		const eventTimeLabel = createLabel(
-			timeText,
-			'widget-calendar-events',
-			`font-size: 11px; font-weight: 600; color: ${secondary}; padding: 4px 8px 4px 2px;`
-		);
-		// createLabel() defaults to x_expand=true; unset it so the label keeps
-		// its natural width and, after the expanding summary label, always sits
-		// flush against the right edge of the row.
-		eventTimeLabel.x_expand = false;
-		eventTimeLabel.clutter_text.line_wrap = false;
-		eventItem.add_child(eventTimeLabel);
 
+		const eventSubtitle = createLabel(
+			subtitleText,
+			'widget-calendar-events',
+			`font-size: 12px; font-weight: 500; color: ${secondary};`
+		);
+		eventSubtitle.clutter_text.line_wrap = false;
+		eventSubtitle.x_expand = true;
+		textBox.add_child(eventSubtitle);
+
+		eventItem.add_child(textBox);
 		container.add_child(eventItem);
 	};
-	// Removed "+N more" label - all events are shown
 };
 
 export function render({body, createLabel, events, sizeForWidget, widget, theme, settings}) {
@@ -676,7 +758,7 @@ export function render({body, createLabel, events, sizeForWidget, widget, theme,
 				// is already loaded and requestRange() no-ops on the same
 				// range, so nothing ever re-triggers this again. Populating an
 				// unmapped box is harmless; it shows once mapped.
-				fillEventsBox(eventsBox, {eventsClient: events, now, secondary, createLabel, settings});
+				fillEventsBox(eventsBox, {eventsClient: events, now, secondary, createLabel, settings, text, theme});
 			};
 
 			const dispose = events.onChange(refresh);
@@ -688,7 +770,7 @@ export function render({body, createLabel, events, sizeForWidget, widget, theme,
 			const startEpoch = Math.floor(dayStart.getTime() / 1000);
 			events.requestRange(startEpoch, startEpoch + EVENTS_WINDOW_DAYS * 86400);
 		} else {
-			fillEventsBox(eventsBox, {eventsClient: null, now, secondary, createLabel, settings});
+			fillEventsBox(eventsBox, {eventsClient: null, now, secondary, createLabel, settings, text, theme});
 		};
 
 		const right = new St.BoxLayout(boxLayoutProps({
@@ -722,6 +804,7 @@ export function render({body, createLabel, events, sizeForWidget, widget, theme,
 		return;
 	};
 
+	// Small widget (1x1) with swipe navigation
 	const scale = clamp(Math.min(widgetWidth, widgetHeight) / 220, 0.8, 2.2);
 	const dayFont = DAY_BASE_FONT;
 	const availWidth = widgetWidth - 32;
@@ -730,24 +813,143 @@ export function render({body, createLabel, events, sizeForWidget, widget, theme,
 	const cellHeight = (compact ? COMPACT_CELL_BASE_HEIGHT : CELL_BASE_HEIGHT) * scale;
 	const weekdayFont = fitWeekdayFontSize(weekdays, cellWidth, dayFont);
 
-	body.add_child(monthLabel(now, createLabel, dayFont, theme, useAccentColor));
+	let currentView = VIEW_CALENDAR;
+	let viewContainer = null;
+	let currentEventBox = null;
+	const animatingActors = new Set();
 
-	body.add_child(buildGrid({
-			now,
-			today,
-			weekCount,
-			createLabel,
-			cellWidth,
-			cellHeight,
-			dayFont,
-			weekdayFont,
-			gap,
-			text,
-			secondary,
-			accent: theme.accent,
-			weekdays,
-			useAccentColor,
-		}));
+	const container = new St.BoxLayout(boxLayoutProps({
+		vertical: true,
+		x_expand: true,
+		y_expand: true,
+	}));
 
-	body.add_child(new St.Widget({y_expand: true}));
+	const rebuild = (enterX = 0) => {
+		if (viewContainer) {
+			container.remove_child(viewContainer);
+		}
+
+		if (currentView === VIEW_CALENDAR) {
+			viewContainer = buildCalendarView({
+				createLabel,
+				now,
+				today,
+				weekCount,
+				cellWidth,
+				cellHeight,
+				dayFont,
+				weekdayFont,
+				gap,
+				text,
+				secondary,
+				theme,
+				useAccentColor,
+				weekdays,
+				cellsInteractive: false,
+			});
+			currentEventBox = null;
+		} else {
+			const result = buildEventsView({
+				createLabel,
+				eventsClient: events,
+				now,
+				text,
+				secondary,
+				settings,
+				width: widgetWidth,
+				theme,
+			});
+			viewContainer = result.view;
+			currentEventBox = result.eventsBox;
+
+			// Setup events refresh for events view
+			if (events) {
+				const refresh = () => {
+					if (currentEventBox && currentView === VIEW_EVENTS) {
+						fillEventsBox(currentEventBox, {eventsClient: events, now, secondary, createLabel, settings, text, theme});
+					}
+				};
+
+				const dispose = events.onChange(refresh);
+				viewContainer.connect('destroy', dispose);
+			}
+		}
+
+		viewContainer.translation_x = enterX;
+		viewContainer.opacity = enterX !== 0 ? 0 : 255;
+
+		if (!animatingActors.has(viewContainer)) {
+			container.add_child(viewContainer);
+		}
+
+		if (enterX !== 0) {
+			animatingActors.add(viewContainer);
+			viewContainer.ease({
+				opacity: 255,
+				translation_x: 0,
+				duration: ANIMATION_DURATION,
+				mode: Clutter.AnimationMode.EASE_OUT_QUAD,
+				onComplete: () => {
+					animatingActors.delete(viewContainer);
+				},
+			});
+		}
+	};
+
+	// Swipe gesture handlers (same as system monitor)
+	container.reactive = true;
+	let startX = 0;
+	let dragging = false;
+
+	container.connect('button-press-event', (actor, event) => {
+		startX = event.get_coords()[0];
+		dragging = true;
+		return Clutter.EVENT_PROPAGATE;
+	});
+
+	container.connect('button-release-event', (actor, event) => {
+		if (!dragging) return Clutter.EVENT_PROPAGATE;
+		dragging = false;
+		const endX = event.get_coords()[0];
+		const delta = endX - startX;
+
+		if (Math.abs(delta) > SWIPE_THRESHOLD) {
+			const oldView = viewContainer;
+			const exitX = delta < 0 ? -widgetWidth : widgetWidth;
+			
+			animatingActors.add(oldView);
+			oldView.ease({
+				opacity: 0,
+				translation_x: exitX,
+				duration: ANIMATION_DURATION,
+				mode: Clutter.AnimationMode.EASE_IN_QUAD,
+				onComplete: () => {
+					animatingActors.delete(oldView);
+					if (oldView.get_parent()) {
+						oldView.get_parent().remove_child(oldView);
+					}
+				},
+			});
+
+			// Toggle between views (any swipe direction switches to the other view)
+			currentView = currentView === VIEW_CALENDAR ? VIEW_EVENTS : VIEW_CALENDAR;
+			
+			GLib.timeout_add(GLib.PRIORITY_DEFAULT, ANIMATION_DURATION / 2, () => {
+				rebuild(-exitX);
+				return GLib.SOURCE_REMOVE;
+			});
+		}
+		return Clutter.EVENT_STOP;
+	});
+
+	rebuild();
+
+	// Request events data
+	if (events) {
+		const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+		const startEpoch = Math.floor(dayStart.getTime() / 1000);
+		events.requestRange(startEpoch, startEpoch + EVENTS_WINDOW_DAYS * 86400);
+	}
+
+	body.add_child(container);
 };
