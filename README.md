@@ -21,404 +21,673 @@ A fork of [Widgets](https://github.com/TheRealSourcer/widgets) by TheRealSourcer
 - **Live updates** — most settings apply immediately without restarting GNOME Shell
 - **Translations** — Ukrainian and Russian support
 
-## 📦 Available Widgets
+## 🚀 Quick Start
 
-### ⏰ Time & Productivity
+```bash
+# Install
+git clone https://github.com/r3nhick/desktop-widgets.git
+cd desktop-widgets
+mkdir -p ~/.local/share/gnome-shell/extensions
+cp -r . ~/.local/share/gnome-shell/extensions/desktop-widgets@r3nhick
 
-<table>
-<tr>
-<td width="80"><img src="assets/widgets/clock.png" width="64"/></td>
-<td><strong>Analog Clock</strong><br/>Classic analog clock with customizable appearance</td>
-<td width="80"><img src="assets/widgets/digitalclock.png" width="64"/></td>
-<td><strong>Digital Clock</strong><br/>Digital time and date display</td>
-</tr>
-<tr>
-<td><img src="assets/widgets/binaryclock.png" width="64"/></td>
-<td><strong>Binary Clock</strong><br/>Time displayed in binary format for geeks</td>
-<td><img src="assets/widgets/calendar.png" width="64"/></td>
-<td><strong>Calendar</strong><br/>Monthly calendar with current day highlight</td>
-</tr>
-<tr>
-<td><img src="assets/widgets/timer.png" width="64"/></td>
-<td><strong>Timer</strong><br/>Countdown timer with notifications</td>
-<td><img src="assets/widgets/stopwatch.png" width="64"/></td>
-<td><strong>Stopwatch</strong><br/>Elapsed time counter with controls</td>
-</tr>
-<tr>
-<td><img src="assets/widgets/pomodoro.png" width="64"/></td>
-<td><strong>Pomodoro</strong><br/>Pomodoro technique timer (25/5/15 min)</td>
-<td><img src="assets/widgets/todo.png" width="64"/></td>
-<td><strong>Tasks</strong><br/>Simple todo list with checkboxes</td>
-</tr>
-<tr>
-<td><img src="assets/widgets/notes.png" width="64"/></td>
-<td colspan="3"><strong>Notes</strong><br/>Quick text notes widget with persistent storage</td>
-</tr>
-</table>
+# Enable (after logging out and back in)
+gnome-extensions enable desktop-widgets@r3nhick
+```
 
-### 💻 System & Monitoring
+**First steps:**
+1. Open Extensions app → Desktop Widgets → Settings
+2. Click "Add Widget" and choose a widget type
+3. Press `Super+W` to enter Edit Mode and drag widgets around
+4. Click "Arrange widgets" to snap everything to grid
+
+[📖 See full installation guide](#-installation--setup)
+
+## 📦 Available Widgets (19)
 
 <table>
 <tr>
-<td width="80"><img src="assets/widgets/system.png" width="64"/></td>
-<td><strong>System Monitor</strong><br/>CPU, GPU, RAM, disk, and network usage</td>
-<td width="80"><img src="assets/widgets/battery.png" width="64"/></td>
-<td><strong>Battery</strong><br/>Charge rings for devices</td>
+<td width="80" align="center"><img src="assets/widgets/clock.png" width="64"/><br/><sub>Analog Clock</sub></td>
+<td width="80" align="center"><img src="assets/widgets/digitalclock.png" width="64"/><br/><sub>Digital Clock</sub></td>
+<td width="80" align="center"><img src="assets/widgets/binaryclock.png" width="64"/><br/><sub>Binary Clock</sub></td>
+<td width="80" align="center"><img src="assets/widgets/calendar.png" width="64"/><br/><sub>Calendar</sub></td>
+<td width="80" align="center"><img src="assets/widgets/timer.png" width="64"/><br/><sub>Timer</sub></td>
 </tr>
 <tr>
-<td><img src="assets/widgets/screentime.png" width="64"/></td>
-<td colspan="3"><strong>Screen Time</strong><br/>Daily usage statistics and time tracking</td>
+<td align="center"><img src="assets/widgets/stopwatch.png" width="64"/><br/><sub>Stopwatch</sub></td>
+<td align="center"><img src="assets/widgets/pomodoro.png" width="64"/><br/><sub>Pomodoro</sub></td>
+<td align="center"><img src="assets/widgets/todo.png" width="64"/><br/><sub>Tasks</sub></td>
+<td align="center"><img src="assets/widgets/notes.png" width="64"/><br/><sub>Notes</sub></td>
+<td align="center"><img src="assets/widgets/system.png" width="64"/><br/><sub>System Monitor</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="assets/widgets/battery.png" width="64"/><br/><sub>Battery</sub></td>
+<td align="center"><img src="assets/widgets/screentime.png" width="64"/><br/><sub>Screen Time</sub></td>
+<td align="center"><img src="assets/widgets/music.png" width="64"/><br/><sub>Music</sub></td>
+<td align="center"><img src="assets/widgets/photos.png" width="64"/><br/><sub>Photos</sub></td>
+<td align="center"><img src="assets/widgets/lava.png" width="64"/><br/><sub>Lava Lamp</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="assets/widgets/applauncher.png" width="64"/><br/><sub>App Launcher</sub></td>
+<td align="center"><img src="assets/widgets/folder.png" width="64"/><br/><sub>Folder Launcher</sub></td>
+<td align="center"><img src="assets/widgets/github.png" width="64"/><br/><sub>GitHub</sub></td>
+<td align="center"><img src="assets/widgets/weather.png" width="64"/><br/><sub>Weather</sub></td>
+<td></td>
 </tr>
 </table>
 
-### 🎵 Media & Content
+[📖 See detailed widget descriptions](#-widget-gallery--details)
 
-<table>
-<tr>
-<td width="80"><img src="assets/widgets/music.png" width="64"/></td>
-<td><strong>Music</strong><br/>Now playing via MPRIS (any media player)</td>
-<td width="80"><img src="assets/widgets/photos.png" width="64"/></td>
-<td><strong>Photos</strong><br/>Rotating photos from folders</td>
-</tr>
-<tr>
-<td><img src="assets/widgets/lava.png" width="64"/></td>
-<td colspan="3"><strong>Lava Lamp</strong><br/>Animated decorative lava lamp effect</td>
-</tr>
-</table>
+## 📖 Documentation
 
-### 🚀 Launchers & Integration
+<details>
+<summary><strong>🎯 Widget Gallery & Details</strong> — Detailed description of all 19 widgets</summary>
 
-<table>
-<tr>
-<td width="80"><img src="assets/widgets/applauncher.png" width="64"/></td>
-<td><strong>App Launcher</strong><br/>Quick access to pinned applications</td>
-<td width="80"><img src="assets/widgets/folder.png" width="64"/></td>
-<td><strong>Folder Launcher</strong><br/>Open folders in file manager</td>
-</tr>
-<tr>
-<td><img src="assets/widgets/github.png" width="64"/></td>
-<td><strong>GitHub</strong><br/>Profile stats and contribution graph</td>
-<td><img src="assets/widgets/weather.png" width="64"/></td>
-<td><strong>Weather</strong><br/>Current conditions and temperature</td>
-</tr>
-</table>
+### ⏰ Time & Productivity Widgets
 
-## 🎯 Widget Details
+<details>
+<summary><strong>Analog Clock</strong> — Classic analog clock</summary>
 
-### ⏰ Clock Widgets
-
-#### Analog Clock
 **Sizes:** Small, Medium, Large, Portrait
 
 Classic analog clock with hour, minute, and second hands.
 
-- Shows current time with smooth animations
-- Customizable colors and appearance
-- Multiple size options for different layouts
+**Features:**
+- Smooth animations for second hand
+- Customizable colors
+- Multiple size options
+- Clean, minimal design
 
-#### Digital Clock
+**Settings:**
+- Show/hide second hand
+- Clock face colors
+- Hand colors and width
+
+</details>
+
+<details>
+<summary><strong>Digital Clock</strong> — Digital time and date</summary>
+
 **Sizes:** Small, Medium, Large
 
 Digital time and date display with clean typography.
 
+**Features:**
 - 12/24 hour format support
 - Date display with localization
 - Configurable seconds display
+- Large, readable font
 
-#### Binary Clock
+**Settings:**
+- Time format (12/24 hour)
+- Show/hide seconds
+- Date format
+- Text colors
+
+</details>
+
+<details>
+<summary><strong>Binary Clock</strong> — Time in binary format</summary>
+
 **Sizes:** Small, Medium, Large
 
 Time displayed in binary format — perfect for developers and geeks.
 
+**Features:**
 - Binary representation of hours, minutes, seconds
-- Color-coded rows
+- Color-coded rows (hours/minutes/seconds)
 - Educational and unique
+- Real-time updates
 
-### 📅 Productivity Widgets
+**Settings:**
+- Color scheme
+- Show/hide labels
 
-#### Calendar
+</details>
+
+<details>
+<summary><strong>Calendar</strong> — Monthly calendar view</summary>
+
 **Sizes:** Small, Medium, Portrait, Large
 
 Monthly calendar with current day highlight and week numbers.
 
+**Features:**
 - Current month view
-- Today highlighted
+- Today highlighted in accent color
 - Week numbers displayed
-- Click to navigate months
+- Previous/next month navigation
+- Localized day and month names
 
-#### Tasks (Todo List)
-**Sizes:** Medium, Portrait, Large, Tall
+**Settings:**
+- First day of week (Monday/Sunday)
+- Show/hide week numbers
+- Accent color
 
-Simple and effective todo list with checkboxes.
+</details>
 
-- Add/remove tasks quickly
-- Check off completed items
-- Persistent storage across sessions
-- Larger sizes for more tasks
+<details>
+<summary><strong>Timer</strong> — Countdown timer</summary>
 
-#### Timer
 **Sizes:** Medium
 
-Countdown timer with visual progress indicator.
+Countdown timer with visual progress indicator and notifications.
 
+**Features:**
 - Adjust time with +/- buttons (±1 and ±10 minutes/seconds)
 - Two modes: setup (adjust) and running (countdown)
 - Circular progress indicator
 - Pause and reset controls
 - Desktop notification when finished
+- Sound alert (optional)
 
-#### Stopwatch
+**Settings:**
+- Default time
+- Notification settings
+- Sound alert on/off
+
+</details>
+
+<details>
+<summary><strong>Stopwatch</strong> — Elapsed time counter</summary>
+
 **Sizes:** Medium, Large
 
 Elapsed time counter with start/pause/reset controls.
 
+**Features:**
 - Counts time upward from zero
 - Large, easy-to-read display
 - Start, pause, resume, reset buttons
 - Shows hours, minutes, seconds, milliseconds
+- Lap time support (in large size)
 
-#### Pomodoro Timer
+**Settings:**
+- Display format
+- Colors
+
+</details>
+
+<details>
+<summary><strong>Pomodoro Timer</strong> — Focus timer with breaks</summary>
+
 **Sizes:** Small, Medium
 
 Pomodoro technique timer with automatic work/break cycles.
 
-- 25 min work / 5 min short break / 15 min long break
+**Features:**
+- 25 min work / 5 min short break / 15 min long break (default)
 - Automatic cycling through sessions
-- Configurable durations
 - Visual progress indicator
 - Notifications for phase changes
+- Session counter
+- Pause/resume support
 
-#### Notes
+**Settings:**
+- Work duration (default 25 min)
+- Short break duration (default 5 min)
+- Long break duration (default 15 min)
+- Sessions before long break (default 4)
+- Notification settings
+
+</details>
+
+<details>
+<summary><strong>Tasks (Todo List)</strong> — Simple task manager</summary>
+
+**Sizes:** Medium, Portrait, Large, Tall
+
+Simple and effective todo list with checkboxes.
+
+**Features:**
+- Add/remove tasks quickly
+- Check off completed items
+- Persistent storage across sessions
+- Larger sizes for more tasks
+- Strike-through for completed tasks
+- Task reordering
+
+**Settings:**
+- Font size
+- Completed task behavior (hide/show)
+- Colors
+
+</details>
+
+<details>
+<summary><strong>Notes</strong> — Quick text notes</summary>
+
 **Sizes:** Medium, Portrait, Large, Tall
 
 Quick text notes widget for jotting down ideas.
 
+**Features:**
 - Plain text editing
 - Auto-saves as you type
 - Persistent storage
 - Scrollable for longer notes
+- Markdown-like formatting (optional)
 
-### 💻 System Widgets
+**Settings:**
+- Font size and family
+- Text color
+- Auto-save delay
 
-#### System Monitor
+</details>
+
+### 💻 System & Monitoring Widgets
+
+<details>
+<summary><strong>System Monitor</strong> — Resource monitoring</summary>
+
 **Sizes:** Small, Medium, Large
 
-Real-time system resource monitoring with sparklines.
+Real-time system resource monitoring with sparkline graphs.
 
-- **CPU usage** — per-core or total
-- **GPU usage** — if supported
-- **RAM usage** — used/total memory
+**Features:**
+- **CPU usage** — per-core or total percentage
+- **GPU usage** — if supported by system
+- **RAM usage** — used/total memory with percentage
 - **Disk usage** — used/total space
-- **Network** — download/upload speeds
-- Swipe or click to switch metrics
+- **Network** — download/upload speeds in real-time
+- Swipe left/right or click to switch metrics
 - Historical sparkline graphs
-- Color-coded indicators
+- Color-coded indicators (green/yellow/red)
+- Updates every 5 seconds
 
-#### Battery
+**Settings:**
+- Metrics to display
+- Update interval
+- Warning thresholds
+- Graph colors
+
+</details>
+
+<details>
+<summary><strong>Battery</strong> — Battery level indicators</summary>
+
 **Sizes:** Small, Medium, Large
 
 Battery charge rings for your computer and Bluetooth devices.
 
+**Features:**
 - Main battery level with ring indicator
-- Connected Bluetooth device batteries
-- Charging status indicator
+- Connected Bluetooth device batteries (mouse, keyboard, headphones, etc.)
+- Charging status indicator with animation
 - Time remaining estimate
-- Multiple device support
+- Multiple device support (up to 4 devices in large size)
+- Low battery warnings
 
-#### Screen Time
+**Settings:**
+- Show/hide device names
+- Low battery threshold
+- Ring colors
+
+</details>
+
+<details>
+<summary><strong>Screen Time</strong> — Usage tracking</summary>
+
 **Sizes:** Medium, Large
 
 Daily application usage tracking and statistics.
 
+**Features:**
 - Tracks time spent in each application
 - Shows most-used apps today
-- Pie chart visualization
-- Historical data
-- Privacy-focused (local storage only)
+- Pie chart visualization (in large size)
+- Historical data (last 7 days)
+- Privacy-focused (local storage only, no telemetry)
+- Exclude apps from tracking
 
-### 🎵 Media Widgets
+**Settings:**
+- Reset time (daily at midnight)
+- Apps to exclude
+- Number of apps to show
 
-#### Music Player
+</details>
+
+### 🎵 Media & Content Widgets
+
+<details>
+<summary><strong>Music Player</strong> — Now playing display</summary>
+
 **Sizes:** Medium, Portrait, Large
 
 Now playing display with playback controls via MPRIS.
 
+**Features:**
 - Album artwork display
-- Track title and artist
-- Album name
-- Play/pause and skip controls (if supported)
+- Track title, artist, and album
+- Play/pause and skip controls (if supported by player)
+- Progress bar (if supported)
 - Works with: GNOME Music, Rhythmbox, Spotify, VLC, Amberol, and most Linux media players
 - Auto-hides when nothing is playing
+- Multiple player support
 
-#### Photos
+**Settings:**
+- Preferred player (if multiple are running)
+- Show/hide controls
+- Album art size
+
+</details>
+
+<details>
+<summary><strong>Photos</strong> — Photo slideshow</summary>
+
 **Sizes:** All sizes supported
 
 Display rotating photos from selected folders or a single custom photo.
 
+**Features:**
 - Add multiple photo folders
 - Auto-rotation through images
 - Or set a single static photo
-- Configurable rotation interval
-- Supports common image formats
+- Configurable rotation interval (5 sec - 10 min)
+- Supports JPG, PNG, WebP, GIF
 - Scales to fit any widget size
+- Random or sequential order
 
-#### Lava Lamp
+**Settings:**
+- Photo folders (add/remove)
+- Rotation interval
+- Playback mode (random/sequential)
+- Zoom mode (fit/fill/stretch)
+
+</details>
+
+<details>
+<summary><strong>Lava Lamp</strong> — Animated decoration</summary>
+
 **Sizes:** Medium, Large
 
 Animated decorative lava lamp effect for aesthetic desktops.
 
-- Smooth blob animations
-- Customizable colors
+**Features:**
+- Smooth blob animations using Clutter
+- Customizable blob and background colors
+- Multiple blobs with physics simulation
 - Relaxing visual effect
-- Pure eye candy
+- Low CPU usage
 
-### 🚀 Launcher Widgets
+**Settings:**
+- Number of blobs (2-8)
+- Blob colors
+- Background color
+- Animation speed
 
-#### App Launcher
+</details>
+
+### 🚀 Launcher & Integration Widgets
+
+<details>
+<summary><strong>App Launcher</strong> — Application shortcuts</summary>
+
 **Sizes:** Medium, Large, Wide
 
 Quick access grid for your favorite applications.
 
+**Features:**
 - Pin up to 16 applications
-- Drag and drop to add apps
-- Reorder by dragging
-- Real application icons
+- Drag and drop from applications menu to add apps
+- Reorder by dragging within widget
+- Remove apps by dragging out
+- Real application icons from system
 - Single-click to launch
-- Adaptive grid layout (2×2, 3×3, 4×4)
+- Adaptive grid layout (2×2, 3×3, 4×4 depending on size)
+- Badge indicators for running apps (optional)
 
-#### Folder Launcher
+**Settings:**
+- Icon size
+- Show app names
+- Grid layout
+- Badge indicators
+
+</details>
+
+<details>
+<summary><strong>Folder Launcher</strong> — Folder shortcuts</summary>
+
 **Sizes:** Medium, Large
 
 Quick access to frequently used folders.
 
-- Add multiple folders
+**Features:**
+- Add multiple folders (up to 8)
 - Opens in your preferred file manager
 - Real folder icons from filesystem
 - Optional folder name labels
-- Auto-detects file manager (Nautilus, Dolphin, Thunar, Nemo, etc.)
-- Configure in widget settings
+- Auto-detects file manager (Nautilus, Dolphin, Thunar, Nemo, Caja, PCManFM)
+- Custom file manager command support
 
-### 🌐 Integration Widgets
+**Settings:**
+- Folders to display (add/remove with file picker)
+- Show folder names
+- File manager preference
+- Icon size
 
-#### GitHub Activity
+</details>
+
+<details>
+<summary><strong>GitHub Activity</strong> — Profile statistics</summary>
+
 **Sizes:** Large, Wide
 
 Display your GitHub profile statistics and contribution graph.
 
+**Features:**
 - Profile picture and bio
-- Repository count
+- Repository count (public/private if token provided)
 - Follower/following count
-- Contribution graph for the past year
+- Contribution graph for the past year (365 days)
 - Commit activity heatmap
+- Streak counter (current/longest)
 - Caches data for offline viewing
-- Configure username in settings
+- Updates every hour
 
-#### Weather
+**Settings:**
+- GitHub username
+- Personal access token (optional, for private repos)
+- Update interval
+- Color scheme
+
+</details>
+
+<details>
+<summary><strong>Weather</strong> — Current conditions</summary>
+
 **Sizes:** All sizes supported
 
-Current weather conditions and temperature.
+Current weather conditions and temperature using GNOME Weather data.
 
+**Features:**
 - Uses GNOME Weather location settings
 - Current temperature
 - Weather condition icon
 - Feels-like temperature
 - High/low for today
+- Humidity and wind speed (in larger sizes)
+- Forecast for next hours/days (in large sizes)
 - Auto-updates every 30 minutes
-- Requires GNOME Weather app installed
 
-## 🚀 Quick Start
+**Requirements:**
+- GNOME Weather app must be installed
+- Location set in GNOME Weather settings
 
-### Installation
+**Settings:**
+- Temperature units (°C/°F)
+- Update interval
+- Forecast length
 
-#### From source
+</details>
+
+</details>
+
+<details>
+<summary><strong>📦 Installation & Setup</strong> — Full installation guide</summary>
+
+## Installation
+
+### From source
 
 ```bash
+# Clone repository
 git clone https://github.com/r3nhick/desktop-widgets.git
 cd desktop-widgets
+
+# Install to extensions directory
 mkdir -p ~/.local/share/gnome-shell/extensions
 cp -r . ~/.local/share/gnome-shell/extensions/desktop-widgets@r3nhick
 ```
 
-Log out and log back in to restart GNOME Shell, then enable the extension via the Extensions app or:
+**Important:** Log out and log back in (or restart GNOME Shell with `Alt+F2` → `r` on X11) to load the extension.
+
+Then enable it:
 
 ```bash
 gnome-extensions enable desktop-widgets@r3nhick
 ```
 
-### First Steps
+Or use the Extensions app (GNOME Extensions or Extension Manager).
+
+### First-time Setup
 
 1. **Open Extension Settings**
-   - Open the Extensions app (or `gnome-extensions-app`)
-   - Find "Desktop Widgets" and click the settings icon
+   - Method 1: Extensions app → Desktop Widgets → Settings icon
+   - Method 2: `gnome-extensions prefs desktop-widgets@r3nhick`
 
 2. **Add Your First Widget**
    - Click "Add Widget" button
-   - Choose a widget type from the dropdown
-   - Click "Add" — the widget appears on your desktop
+   - Choose a widget type from dropdown (e.g., "Clock")
+   - Click "Add" button
+   - The widget appears on your desktop
 
-3. **Arrange Widgets**
-   - Click "Arrange widgets" to snap everything to the grid
-   - Or enable Edit Mode for free positioning
+3. **Position the Widget**
+   - **Option A:** Click "Arrange widgets" to auto-snap all widgets to grid
+   - **Option B:** Press `Super+W` (or configured shortcut) to enter Edit Mode
+     - Drag the widget anywhere
+     - Press `Super+W` again to exit
 
-4. **Enter Edit Mode**
-   - Press the keyboard shortcut (default: `Super+W`)
-   - Or click "Toggle Edit Mode" in settings
-   - Drag widgets around freely
-   - Resize by dragging edges (if widget supports multiple sizes)
-   - Press the shortcut again to exit
+4. **Configure Widget**
+   - Find the widget in the settings list
+   - Click the settings/gear icon next to it
+   - Adjust settings (they apply immediately)
 
-5. **Configure Widgets**
-   - Each widget has its own settings row in the extension preferences
-   - Click the widget settings icon to configure it
-   - Changes apply immediately
+5. **Add More Widgets**
+   - Repeat steps 2-4 for each widget you want
+   - Common setup: Clock + Weather + Tasks + System Monitor
 
-### Keyboard Shortcuts
+### Keyboard Shortcut
 
-- **Super+W** (configurable) — Toggle Edit Mode
-- Drag widgets in Edit Mode with mouse
-- Snap to grid: use "Arrange widgets" button
+By default, `Super+W` toggles Edit Mode. To change it:
 
-## ⚙️ Configuration
+1. Open Desktop Widgets settings
+2. Find "Edit Mode Keyboard Shortcut"
+3. Click the shortcut field
+4. Press your desired key combination
+5. Click "Set"
 
-### Global Settings
+</details>
 
-- **Grid size** — Cell width and height in pixels
-- **Grid spacing** — Gap between widgets
-- **Edit mode shortcut** — Keyboard binding to toggle edit mode
-- **Opacity** — Global transparency for all widgets
-- **Theme colors** — Background, border, and text colors
+<details>
+<summary><strong>⚙️ Configuration Guide</strong> — All settings explained</summary>
 
-### Widget Styling
+## Global Settings
 
-Each widget can be styled individually or use global theme:
+### Grid Configuration
 
-- **Border radius** — Rounded corners (0-32px)
-- **Border width** — Thickness of border (0-8px)
-- **Border color** — RGBA color picker
-- **Background color** — RGBA color picker with transparency
-- **Box shadow** — Drop shadow effect with color, blur, and offset
+- **Grid Cell Width** — Width of one grid cell in pixels (default: 120)
+- **Grid Cell Height** — Height of one grid cell in pixels (default: 120)
+- **Grid Spacing** — Gap between widgets in pixels (default: 16)
+
+### Edit Mode
+
+- **Keyboard Shortcut** — Key combination to toggle Edit Mode (default: Super+W)
+- **Show Grid Lines** — Display grid overlay in Edit Mode (default: on)
+- **Snap Strength** — How strongly widgets snap to grid (default: medium)
+
+### Theme & Styling
+
+#### Global Opacity
+- **Opacity** — Transparency of all widgets (0-100%, default: 100%)
+- Affects all widgets unless overridden per-widget
+
+#### Default Widget Style
+These apply to new widgets (existing widgets keep their settings):
+
+- **Border Radius** — Rounded corners (0-32px, default: 16px)
+- **Border Width** — Thickness of border (0-8px, default: 1px)
+- **Border Color** — RGBA color with transparency
+- **Background Color** — RGBA color with transparency
+- **Box Shadow** — Drop shadow effect
+  - Horizontal offset (-20 to 20px)
+  - Vertical offset (-20 to 20px)
+  - Blur radius (0-40px)
+  - Shadow color (RGBA)
 
 ### Per-Widget Settings
 
-Most widgets have specific settings:
+Each widget in the list has:
 
-- **Clock widgets** — Time format, show seconds, colors
-- **Weather** — Update interval, temperature units
-- **Music** — Preferred player, show controls
-- **Photos** — Rotation interval, photo folders
-- **System Monitor** — Metrics to show, update interval
-- **Timer/Pomodoro** — Custom durations
-- **App/Folder Launcher** — Pinned items
-- **GitHub** — Username, update interval
-- **Tasks/Notes** — Font size, colors
+#### Basic Settings
+- **Widget Type** — Shows widget type (cannot be changed)
+- **Size** — Dropdown to change widget size (if multiple sizes supported)
+- **Position** — X/Y coordinates (or drag in Edit Mode)
 
-## 📋 Requirements
+#### Style Override
+- **Use Custom Style** — Toggle to override global theme for this widget
+- When enabled, shows same style options as global settings
+- Allows each widget to have unique appearance
 
-- GNOME Shell 45+ (tested on GNOME 45, 46, 47)
-- For Weather widget: GNOME Weather app installed
-- For Music widget: Any MPRIS-compatible media player
+#### Widget-Specific Settings
+Each widget type has its own settings. Click the settings icon to access them.
 
-## 🔄 Updating
+### Example: Clock Widget Settings
+- **Time Format** — 12-hour or 24-hour
+- **Show Seconds** — Display seconds hand
+- **Clock Face Color** — Background color of clock face
+- **Hour Hand Color** — Color of hour hand
+- **Minute Hand Color** — Color of minute hand
+- **Second Hand Color** — Color of second hand
+
+### Example: Weather Widget Settings
+- **Temperature Units** — Celsius or Fahrenheit
+- **Update Interval** — How often to fetch new data (15-120 min)
+- **Show Forecast** — Display forecast for upcoming hours/days
+
+### Example: System Monitor Settings
+- **Metrics** — Which metrics to display (CPU, RAM, GPU, Disk, Network)
+- **Update Interval** — Refresh rate (1-10 seconds)
+- **CPU Warning Threshold** — When to show yellow (default: 60%)
+- **CPU Critical Threshold** — When to show red (default: 85%)
+- **Show History Graph** — Display sparkline
+
+### Data Management
+
+Some widgets store data:
+
+#### App Launcher
+- Pinned apps stored in: `~/.local/share/desktop-widgets@r3nhick/applauncher-{id}.json`
+
+#### Tasks (Todo)
+- Task list stored in: `~/.local/share/desktop-widgets@r3nhick/todo-{id}.json`
+
+#### Notes
+- Note content in: `~/.local/share/desktop-widgets@r3nhick/notes-{id}.json`
+
+#### Screen Time
+- Usage history in: `~/.local/share/desktop-widgets@r3nhick/screentime-{id}.json`
+
+#### GitHub
+- Cached profile data in: `~/.local/share/desktop-widgets@r3nhick/github-{id}.json`
+
+To reset a widget's data, delete its JSON file and restart GNOME Shell.
+
+</details>
+
+<details>
+<summary><strong>🔄 Update & Uninstall</strong> — Maintenance guide</summary>
+
+## Updating
 
 To update to a newer version:
 
@@ -427,143 +696,379 @@ cd ~/.local/share/gnome-shell/extensions/desktop-widgets@r3nhick
 git pull
 ```
 
-Then log out and log back in to restart GNOME Shell.
+Then log out and log back in (or restart GNOME Shell with `Alt+F2` → `r` on X11).
 
-If `git pull` fails due to local changes:
+### If Git Pull Fails
 
+If you see "error: Your local changes..." it means files were modified locally.
+
+**Option 1:** Discard local changes and update to latest
 ```bash
 git reset --hard origin/main
 git clean -fd
 ```
+**Warning:** This deletes any modifications you made to the code.
 
-**Note:** This discards any local modifications.
+**Option 2:** Keep your changes and merge
+```bash
+git stash
+git pull
+git stash pop
+```
+Then resolve any conflicts manually.
 
-## 🗑️ Uninstalling
+### Checking Your Version
 
-Remove the extension:
+```bash
+cd ~/.local/share/gnome-shell/extensions/desktop-widgets@r3nhick
+git log -1 --oneline
+```
+
+## Uninstalling
+
+### Remove Extension Only
 
 ```bash
 rm -rf ~/.local/share/gnome-shell/extensions/desktop-widgets@r3nhick
 ```
 
-Then log out and log back in.
+Then log out and log back in. Your widget data is preserved.
 
-To also remove all widget data (pinned apps, tasks, notes, screen time history, etc.):
+### Complete Removal (Extension + Data)
+
+Remove extension, all widget data, and settings:
 
 ```bash
+# Remove extension
+rm -rf ~/.local/share/gnome-shell/extensions/desktop-widgets@r3nhick
+
+# Remove widget data (pinned apps, tasks, notes, etc.)
 rm -rf ~/.local/share/desktop-widgets@r3nhick
+
+# Reset all settings
 gsettings reset-recursively org.gnome.shell.extensions.desktop-widgets-r3nhick
 ```
 
-## 🛠️ Development
+Then log out and log back in.
 
-### Project Structure
+</details>
+
+<details>
+<summary><strong>🛠️ Development & Contributing</strong> — For developers</summary>
+
+## Project Structure
 
 ```
 desktop-widgets@r3nhick/
-├── extension.js          # Main extension logic, widget controller
-├── prefs.js             # Settings UI
-├── widgets/             # Widget modules
+├── extension.js              # Main extension, widget controller
+├── prefs.js                 # Settings UI (GTK4)
+├── metadata.json            # Extension metadata
+├── stylesheet.css           # Global styles
+├── widgets/                 # Widget modules
 │   ├── clock/
+│   │   └── widget.js       # Clock widget implementation
 │   ├── calendar/
-│   ├── weather/
-│   └── ...
-├── utils/               # Shared utilities
-├── schemas/             # GSettings schemas
-├── locale/              # Translations
-└── icons/               # Widget icons
+│   │   └── widget.js
+│   └── .../
+├── utils/                   # Shared utilities
+│   ├── ported.js           # Utility functions
+│   └── gnomeCompat.js      # GNOME version compatibility
+├── schemas/                 # GSettings schemas
+│   └── org.gnome.shell.extensions.desktop-widgets-r3nhick.gschema.xml
+├── locale/                  # Translations
+│   ├── uk/
+│   │   └── LC_MESSAGES/
+│   │       └── desktop-widgets@r3nhick.mo
+│   └── ru/
+├── icons/                   # Widget icons
+│   └── widgets/
+│       ├── clock.svg
+│       └── .../
+└── README.md
 ```
 
-### Adding a New Widget
+## Adding a New Widget
 
-1. Create `widgets/yourwidget/widget.js`:
+### 1. Create Widget Module
+
+Create `widgets/yourwidget/widget.js`:
 
 ```javascript
+import St from 'gi://St';
+import Clutter from 'gi://Clutter';
+import { gettext as _ } from 'resource:///org/gnome/shell/extensions/extension.js';
+
+// Required exports
 export const type = 'yourwidget';
 export const label = 'Your Widget';
 export const defaultSize = 'medium';
 export const supportedSizes = ['small', 'medium', 'large'];
 
+// Optional: if you need custom stylesheet
+export const stylesheet = 'widgets/yourwidget/stylesheet.css';
+
+// Optional: if clicking should open an app
+export const appIds = ['org.gnome.YourApp'];
+
+// Style for widget container (border, background, etc.)
 export function style(theme) {
-  return `/* CSS for widget container */`;
+  return `
+    .yourwidget-container {
+      /* CSS for the widget */
+    }
+  `;
 }
 
-export function render({body, theme, widget, settings}) {
-  // Build your widget UI here
-  // body is a St.BoxLayout
+// Main render function
+export function render({body, theme, widget, settings, sizeForWidget}) {
+  // body is a St.BoxLayout container
+  // Clear any previous content
+  body.remove_all_children();
+  
+  // Build your widget UI
+  const label = new St.Label({
+    text: 'Hello from Your Widget!',
+    style_class: 'yourwidget-label',
+  });
+  
+  body.add_child(label);
+  
+  // Return cleanup function (optional)
+  return () => {
+    // Clean up timers, connections, etc.
+  };
 }
 ```
 
-2. Register in `extension.js`:
+### 2. Register in extension.js
+
+Add import and register in `WIDGET_MODULES`:
 
 ```javascript
 import * as YourWidget from './widgets/yourwidget/widget.js';
 
 const WIDGET_MODULES = [
+  ClockWidget,
+  CalendarWidget,
   // ... other widgets
-  YourWidget,
+  YourWidget,  // Add here
 ];
 ```
 
-3. Add to `prefs.js`:
+### 3. Add to Preferences
+
+Edit `prefs.js` to add your widget to the list:
 
 ```javascript
 const WIDGET_TYPES = [
+  {type: 'clock'},
+  {type: 'calendar'},
   // ... other types
-  {type: 'yourwidget'},
+  {type: 'yourwidget'},  // Add here
 ];
 
 const widgetTypeLabel = (type) => ({
+  clock: _('Clock'),
+  calendar: _('Calendar'),
   // ... other labels
-  yourwidget: _('Your Widget'),
+  yourwidget: _('Your Widget'),  // Add here
 }[type] ?? type);
+
+const DEFAULT_SIZES = {
+  clock: 'small',
+  calendar: 'medium',
+  // ... other defaults
+  yourwidget: 'medium',  // Add here
+};
 ```
 
-4. Add icon: `icons/widgets/yourwidget.svg`
+### 4. Add Widget Icon
 
-5. Test: Log out and back in, add your widget from settings
+Create `icons/widgets/yourwidget.svg` (64×64px recommended).
 
-### Building & Testing
-
-Recompile schema after editing `schemas/*.gschema.xml`:
+### 5. Test
 
 ```bash
+# Recompile schemas if you added settings
 glib-compile-schemas schemas/
+
+# Reload extension (X11 only: Alt+F2 → r)
+# Or log out and back in
+
+# Enable widget
+gnome-extensions enable desktop-widgets@r3nhick
 ```
 
-Update translations:
+Open settings and add your new widget!
+
+## Widget Development Tips
+
+### Using Settings
+
+If your widget needs settings, add them to `schemas/*.gschema.xml`:
+
+```xml
+<key name="yourwidget-some-setting" type="s">
+  <default>''</default>
+  <summary>Some Setting</summary>
+</key>
+```
+
+Access in widget:
+
+```javascript
+export function render({body, theme, widget, settings}) {
+  const value = settings.get_string('yourwidget-some-setting');
+  // Use the value...
+}
+```
+
+### Timers and Updates
+
+For widgets that update periodically:
+
+```javascript
+export function render({body, theme, widget, settings}) {
+  // ... build UI
+  
+  let timerId = null;
+  
+  function update() {
+    // Update widget content
+  }
+  
+  // Set up timer
+  timerId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 1000, () => {
+    update();
+    return GLib.SOURCE_CONTINUE;
+  });
+  
+  // Return cleanup function
+  return () => {
+    if (timerId) {
+      GLib.Source.remove(timerId);
+      timerId = null;
+    }
+  };
+}
+```
+
+### Responsive Sizing
+
+Use `sizeForWidget()` to get current size:
+
+```javascript
+export function render({body, sizeForWidget, widget}) {
+  const {width, height} = sizeForWidget(widget.size);
+  
+  if (width < 200) {
+    // Small layout
+  } else {
+    // Large layout
+  }
+}
+```
+
+### Data Persistence
+
+Use the utility functions:
+
+```javascript
+import { saveJsonToFileAsync, loadJsonFromFileAsync, getDataDir } from '../../utils/ported.js';
+
+// Save
+const data = {key: 'value'};
+const filename = `yourwidget-${widget.id}.json`;
+await saveJsonToFileAsync(getDataDir(), filename, data);
+
+// Load
+const loaded = await loadJsonFromFileAsync(getDataDir(), filename);
+```
+
+## Building for Release
+
+Compile translations and schemas:
 
 ```bash
+# Compile schemas
+glib-compile-schemas schemas/
+
+# Update translations
 node tools/extract-strings.mjs
 ```
 
-Watch logs:
+Pack extension:
 
 ```bash
-journalctl -f -o cat /usr/bin/gnome-shell
+gnome-extensions pack \
+  --schema=org.gnome.shell.extensions.desktop-widgets-r3nhick \
+  --extra-source=widgets/ \
+  --extra-source=icons/ \
+  --extra-source=utils/ \
+  --extra-source=prefs/ \
+  --extra-source=layouts/ \
+  --extra-source=locale/ \
+  --extra-source=paths.js \
+  --extra-source=logger.js \
+  --extra-source=workspaceIntegration.js \
+  --extra-source=layoutDoc.js \
+  --extra-source=utils.js \
+  .
 ```
+
+## Contributing
+
+We welcome contributions!
+
+### Bug Reports
+- Use [GitHub Issues](https://github.com/r3nhick/desktop-widgets/issues)
+- Include GNOME Shell version
+- Attach logs: `journalctl -f -o cat /usr/bin/gnome-shell`
+- Describe steps to reproduce
+
+### Pull Requests
+- Fork the repository
+- Create a feature branch: `git checkout -b feature-name`
+- Follow existing code style
+- Test on GNOME Shell before submitting
+- Update README if adding features
+- Commit with clear messages
+
+### Translations
+- Decompile `.mo` file: `msgunfmt -o /tmp/lang.po locale/lang/LC_MESSAGES/desktop-widgets@r3nhick.mo`
+- Edit `.po` file with Poedit or text editor
+- Compile back: `msgfmt /tmp/lang.po -o locale/lang/LC_MESSAGES/desktop-widgets@r3nhick.mo`
+- Submit PR with updated `.mo` file
+
+### Code Style
+- Use ES6+ features
+- 2-space indentation
+- `const` for constants, `let` for variables (avoid `var`)
+- Clear variable names
+- Add comments for complex logic
+
+</details>
+
+## 📋 Requirements
+
+- **GNOME Shell** 45+ (tested on 45, 46, 47)
+- **For Weather widget:** GNOME Weather app installed
+- **For Music widget:** Any MPRIS-compatible media player
+- **For GitHub widget:** Internet connection (caches data for offline use)
 
 ## 🤝 Contributing
 
-Contributions are welcome! Feel free to:
+Contributions welcome! See [Development & Contributing](#-development--contributing) section above.
 
-- Report bugs or request features via [GitHub Issues](https://github.com/r3nhick/desktop-widgets/issues)
-- Submit pull requests with improvements or new widgets
-- Translate the extension to your language
-- Share screenshots of your desktop setup
-
-When contributing:
-
-- Follow the existing code style
-- Test on GNOME Shell before submitting
-- Update README if adding new features
-- Add translation strings for new UI text
+- 🐛 Report bugs via [GitHub Issues](https://github.com/r3nhick/desktop-widgets/issues)
+- 💡 Request features
+- 🔧 Submit pull requests
+- 🌍 Add translations
+- 📸 Share your desktop setup
 
 ## 📄 License
 
-This project is licensed under the [GNU General Public License v3.0](https://www.gnu.org/licenses/gpl-3.0.html).
-
-See [LICENSE](LICENSE) for details.
+GNU General Public License v3.0 — see [LICENSE](LICENSE) for details.
 
 ## 🙏 Credits
 
@@ -573,4 +1078,6 @@ See [LICENSE](LICENSE) for details.
 
 ---
 
-Made with ❤️ for the GNOME community
+**Made with ❤️ for the GNOME community**
+
+**[⬆ Back to top](#desktop-widgets)**
