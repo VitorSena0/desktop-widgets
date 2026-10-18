@@ -35,7 +35,7 @@ mkdir -p ~/.local/share/gnome-shell/extensions
 cp -r . ~/.local/share/gnome-shell/extensions/desktop-widgets@r3nhick
 ```
 
-**Important:** Log out and log back in (or restart GNOME Shell with `Alt+F2` → `r` on X11) to load the extension.
+**Important:** Log out of your session and log back in to load the extension.
 
 Then enable it:
 
@@ -74,7 +74,7 @@ cd ~/.local/share/gnome-shell/extensions/desktop-widgets@r3nhick
 git pull
 ```
 
-Then log out and log back in.
+Then log out of your session and log back in.
 
 ## 📦 Available Widgets (19)
 
