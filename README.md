@@ -10,6 +10,8 @@ A fork of [Widgets](https://github.com/TheRealSourcer/widgets) by TheRealSourcer
 
 ![Desktop Widgets](assets/screenshot-3.png)
 
+![Desktop Widgets](assets/screenshot-4.png)
+
 ## Features
 
 - **Grid layout** — widgets snap to a desktop grid and can be freely arranged in edit mode.
