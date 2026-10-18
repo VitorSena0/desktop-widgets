@@ -80,31 +80,31 @@ Then log out of your session and log back in.
 
 <table>
 <tr>
-<td width="100" align="center"><img src="assets/widgets/clock.png" width="80"/><br/><sub><b>Analog Clock</b></sub></td>
-<td width="100" align="center"><img src="assets/widgets/digitalclock.png" width="80"/><br/><sub><b>Digital Clock</b></sub></td>
-<td width="100" align="center"><img src="assets/widgets/binaryclock.png" width="80"/><br/><sub><b>Binary Clock</b></sub></td>
-<td width="100" align="center"><img src="assets/widgets/calendar.png" width="80"/><br/><sub><b>Calendar</b></sub></td>
-<td width="100" align="center"><img src="assets/widgets/timer.png" width="80"/><br/><sub><b>Timer</b></sub></td>
+<td width="120" align="center"><img src="assets/widgets/clock.png" width="100"/><br/><sub><b>Analog Clock</b></sub></td>
+<td width="120" align="center"><img src="assets/widgets/digitalclock.png" width="100"/><br/><sub><b>Digital Clock</b></sub></td>
+<td width="120" align="center"><img src="assets/widgets/binaryclock.png" width="100"/><br/><sub><b>Binary Clock</b></sub></td>
+<td width="120" align="center"><img src="assets/widgets/calendar.png" width="100"/><br/><sub><b>Calendar</b></sub></td>
+<td width="120" align="center"><img src="assets/widgets/timer.png" width="100"/><br/><sub><b>Timer</b></sub></td>
 </tr>
 <tr>
-<td align="center"><img src="assets/widgets/stopwatch.png" width="80"/><br/><sub><b>Stopwatch</b></sub></td>
-<td align="center"><img src="assets/widgets/pomodoro.png" width="80"/><br/><sub><b>Pomodoro</b></sub></td>
-<td align="center"><img src="assets/widgets/todo.png" width="80"/><br/><sub><b>Tasks</b></sub></td>
-<td align="center"><img src="assets/widgets/notes.png" width="80"/><br/><sub><b>Notes</b></sub></td>
-<td align="center"><img src="assets/widgets/system.png" width="80"/><br/><sub><b>System Monitor</b></sub></td>
+<td align="center"><img src="assets/widgets/stopwatch.png" width="100"/><br/><sub><b>Stopwatch</b></sub></td>
+<td align="center"><img src="assets/widgets/pomodoro.png" width="100"/><br/><sub><b>Pomodoro</b></sub></td>
+<td align="center"><img src="assets/widgets/todo.png" width="100"/><br/><sub><b>Tasks</b></sub></td>
+<td align="center"><img src="assets/widgets/notes.png" width="100"/><br/><sub><b>Notes</b></sub></td>
+<td align="center"><img src="assets/widgets/system.png" width="100"/><br/><sub><b>System Monitor</b></sub></td>
 </tr>
 <tr>
-<td align="center"><img src="assets/widgets/battery.png" width="80"/><br/><sub><b>Battery</b></sub></td>
-<td align="center"><img src="assets/widgets/screentime.png" width="80"/><br/><sub><b>Screen Time</b></sub></td>
-<td align="center"><img src="assets/widgets/music.png" width="80"/><br/><sub><b>Music</b></sub></td>
-<td align="center"><img src="assets/widgets/photos.png" width="80"/><br/><sub><b>Photos</b></sub></td>
-<td align="center"><img src="assets/widgets/lava.png" width="80"/><br/><sub><b>Lava Lamp</b></sub></td>
+<td align="center"><img src="assets/widgets/battery.png" width="100"/><br/><sub><b>Battery</b></sub></td>
+<td align="center"><img src="assets/widgets/screentime.png" width="100"/><br/><sub><b>Screen Time</b></sub></td>
+<td align="center"><img src="assets/widgets/music.png" width="100"/><br/><sub><b>Music</b></sub></td>
+<td align="center"><img src="assets/widgets/photos.png" width="100"/><br/><sub><b>Photos</b></sub></td>
+<td align="center"><img src="assets/widgets/lava.png" width="100"/><br/><sub><b>Lava Lamp</b></sub></td>
 </tr>
 <tr>
-<td align="center"><img src="assets/widgets/applauncher.png" width="80"/><br/><sub><b>App Launcher</b></sub></td>
-<td align="center"><img src="assets/widgets/folder.png" width="80"/><br/><sub><b>Folder Launcher</b></sub></td>
-<td align="center"><img src="assets/widgets/github.png" width="80"/><br/><sub><b>GitHub</b></sub></td>
-<td align="center"><img src="assets/widgets/weather.png" width="80"/><br/><sub><b>Weather</b></sub></td>
+<td align="center"><img src="assets/widgets/applauncher.png" width="100"/><br/><sub><b>App Launcher</b></sub></td>
+<td align="center"><img src="assets/widgets/folder.png" width="100"/><br/><sub><b>Folder Launcher</b></sub></td>
+<td align="center"><img src="assets/widgets/github.png" width="100"/><br/><sub><b>GitHub</b></sub></td>
+<td align="center"><img src="assets/widgets/weather.png" width="100"/><br/><sub><b>Weather</b></sub></td>
 <td></td>
 </tr>
 </table>
