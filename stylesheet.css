@@ -7,8 +7,8 @@
     border: 1px solid #505058;
     border-radius: 16px;
     padding: 16px;
-    /* color і border-color задає тема (_styleForWidget додає їх інлайном).
-       Тут не має бути жодного хардкоду: білий текст зникав у світлій темі. */
+    /* color and border-color come from the theme (_styleForWidget adds them
+       inline). Nothing hardcoded here: white text vanished in the light theme. */
     line-height: 1.35em;
     font-size: 16px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.26);
@@ -18,7 +18,7 @@
 
 .widget-layer .widget:hover {
     box-shadow: 0 10px 32px rgba(0, 0, 0, 0.34);
-    /* Нейтральний колір: білий бордер зникав на білому віджеті у світлій темі. */
+    /* Neutral border: a white border disappeared on white widgets in the light theme. */
     border-color: rgba(128, 128, 128, 0.55);
 }
 
@@ -175,7 +175,7 @@
     pointer-events: auto;
 }
 
-/* Меню додавання віджетів */
+/* Add-widget menu */
 .widget-add-menu {
     pointer-events: auto;
 }
@@ -210,7 +210,7 @@
     transform: translateY(0px);
 }
 
-/* Кнопка додавання віджетів */
+/* Add-widget button */
 .widget-add-button {
     pointer-events: auto;
     transition: all 200ms ease-out;

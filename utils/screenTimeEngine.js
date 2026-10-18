@@ -118,7 +118,7 @@ export const screenTimeEngine = {
 		this._paused = paused;
 		
 		if (paused) {
-			// При паузі - зберегти поточний фокус та час
+			// Keep the current focus and elapsed time while paused
 			const now = GLib.get_real_time();
 			this._flushFocused(now);
 			this._saveNow();
@@ -239,7 +239,7 @@ export const screenTimeEngine = {
 	},
 
 	_tick() {
-		// Пропустити tick якщо на паузі (наприклад, при fullscreen)
+		// Skip ticks while paused (e.g. a fullscreen window)
 		if (this._paused) {
 			return;
 		}

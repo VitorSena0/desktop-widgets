@@ -322,9 +322,18 @@ class SystemMonitor {
   }
 }
 
-const monitor = new SystemMonitor();
+let monitor = null;
 
-// Export monitor для fullscreen pause optimization
+// Lazy singleton: the GObject instance is created on first use in render()
+// (i.e. after enable()), not at module import time.
+function getSystemMonitor() {
+  if (monitor === null) {
+    monitor = new SystemMonitor();
+  }
+  return monitor;
+}
+
+// Export monitor for the fullscreen pause optimization
 export { monitor };
 
 function formatBytes(bytes) {
@@ -517,6 +526,7 @@ function createSparkTile(theme, label, value, unit, accentColor, samples, maxVal
 }
 
 export function render({body, theme, widget, sizeForWidget}) {
+  monitor = getSystemMonitor();
   const size = widget?.size || defaultSize;
   const [width, height] = sizeForWidget(widget);
   const accentColor = theme.accent || '#3584e4';
@@ -670,7 +680,7 @@ export function render({body, theme, widget, sizeForWidget}) {
       
       sparkArea.queue_repaint();
       
-      // Перерозподілити ширину tiles після оновлення тексту (особливо для network)
+      // Reallocate tile widths after text updates (especially for network)
       layoutTiles();
     };
 
@@ -819,7 +829,7 @@ export function render({body, theme, widget, sizeForWidget}) {
         tile.sparkArea.queue_repaint();
       }
       
-      // Перерозподілити ширину tiles після оновлення тексту (особливо для network)
+      // Reallocate tile widths after text updates (especially for network)
       layoutTiles();
     };
 

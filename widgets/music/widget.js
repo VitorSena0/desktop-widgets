@@ -22,6 +22,8 @@ const PLAYER_PATH = '/org/mpris/MediaPlayer2';
 const DBUS_IFACE = 'org.freedesktop.DBus.Properties';
 const TICK_MS = 2000;
 const LOOP_CYCLE = ['None', 'Track', 'Playlist'];
+// Cover fallback: every candidate GIF is decoded once and cached, so cards
+// after the first one paint instantly instead of re-reading the file.
 const GIF_CANDIDATES = ['pushy.gif', 'pushy2.gif', 'pushy3.gif', 'pushy4.gif', 'pushy5.gif'];
 const gifFramesCache = new Map();
 const CHROMIUM_MARKERS = ['chromium', 'chrome', 'brave', 'vivaldi', 'opera', 'edge', 'yandex', 'thorium', 'helium', 'firefox'];
@@ -348,7 +350,7 @@ export function style(theme) {
 	return `background-color: ${theme.background}; border-color: ${theme.border}; color: ${theme.text}; padding: 12px 16px;`;
 };
 
-// Керуючі іконки: сірі коли неактивні, білі/чорні коли активні
+// Control icons: gray when inactive, white/black when active
 function controlIconFile(theme, iconName, isActive = false) {
 	const suffix = isActive 
 		? (theme?.dark ? '-white' : '-black')
@@ -572,8 +574,8 @@ function createCard(theme, createLabel, widgetWidth, widgetHeight) {
 	card.controls.add_child(card.btnPlay.button);
 	card.controls.add_child(card.btnNext.button);
 
-	// Новий значок — правий кут першого рядка правої колонки:
-	// рядок належить тільки йому, решта контенту стоїть нижче.
+	// The new icon sits top-right of the first row of the right column:
+	// that row belongs to it alone, the rest of the content sits below.
 	card.statusIcon = new St.Icon({
 		gicon: controlIcon(theme, 'music'),
 		x_align: Clutter.ActorAlign.END,

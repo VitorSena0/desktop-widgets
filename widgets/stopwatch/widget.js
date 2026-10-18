@@ -9,7 +9,7 @@ export const label = 'Stopwatch';
 export const defaultSize = 'medium';
 export const supportedSizes = ['small', 'medium'];
 
-const TICK_INTERVAL_MS = 10; // 10ms для сантисекунд (centiseconds)
+const TICK_INTERVAL_MS = 10; // 10ms for centiseconds
 
 function formatTime(totalCentiseconds) {
 	const totalSeconds = Math.floor(totalCentiseconds / 100);
@@ -68,7 +68,7 @@ function renderSmallTimer({body, theme, sizeForWidget, widget}) {
 		style: `spacing: ${px(4)}px;`,
 	});
 
-	// Minutes:Seconds (без centiseconds для малого віджета)
+	// Minutes:Seconds (no centiseconds for the small widget)
 	const timeLabel = new St.Label({
 		text: '00:00',
 		x_align: Clutter.ActorAlign.CENTER,

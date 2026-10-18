@@ -15,11 +15,11 @@ function assetPath(name) {
 };
 
 /**
- * Шлях до іконки налаштувань (`icons/settings/<name>.svg`).
+ Path to a settings icon (`icons/settings/<name>.svg`).
  *
- * Потрібний у shell, де GTK не шукає в темі: іконки dw-* мають два
- * кольорові варіанти (-light/-dark) і не мають суфікса -symbolic, тож
- * їх не можна віддати через icon_name — тільки шляхом на диск.
+ Needed in the shell, where GTK does no icon-theme lookup: dw-* icons
+ have two color variants (-light/-dark) and no -symbolic suffix,
+ so they cannot be passed as icon_name — only as a file path.
  */
 function settingsIconPath(name) {
 	return EXTENSION_PATH
@@ -28,8 +28,8 @@ function settingsIconPath(name) {
 };
 
 /**
- * Шлях до внутрішніх ресурсів віджета (`icons/widgets_settings/<widgetType>/<name>`).
- * Використовується для іконок керування, gif-анімацій тощо.
+ Path to widget-internal resources (`icons/widgets_settings/<widgetType>/<name>`).
+ Used for control icons, GIF animations, etc.
  */
 function widgetResourcePath(widgetType, name) {
 	return EXTENSION_PATH

@@ -161,7 +161,7 @@ function drawCircularArc(ctx, width, height, progress, accent, track, isRunning)
 	const centerX = width / 2;
 	const centerY = height / 2;
 	const radius = Math.min(width, height) / 2;
-	// Збільшено товщину лінії кола до 0.10 (ще ширше)
+	// Ring stroke widened to 0.10
 	const lineWidth = Math.max(2, Math.round(radius * 0.10));
 	const startAngle = -Math.PI / 2;
 	const endAngle = startAngle + Math.min(Math.max(progress, 0), 1) * Math.PI * 2;
@@ -439,7 +439,7 @@ function renderMediumFocus({body, theme, sizeForWidget, widget, settings}) {
 		text: getPhaseLabel(state.phase),
 	});
 
-	// Поміняли місцями: спочатку фаза (Focus), потім час
+	// Order changed: the phase label (Focus) comes first, then the time
 	gaugeOverlay.add_child(phaseCaption);
 	gaugeOverlay.add_child(timerLabel);
 	gaugeWrap.add_child(canvasActor);

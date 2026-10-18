@@ -40,7 +40,7 @@ function getBallColor(theme, settings) {
 	return parseCssColor(DEFAULT_GRAY);
 }
 
-// Metaball effect: обчислюємо силу поля в точці (x, y)
+// Metaball effect: field strength at point (x, y)
 function calculateFieldStrength(x, y, balls) {
 	let sum = 0;
 	for (let ball of balls) {
@@ -48,7 +48,7 @@ function calculateFieldStrength(x, y, balls) {
 		const dy = y - ball.y;
 		const distSq = dx * dx + dy * dy;
 		if (distSq > 0) {
-			// Використовуємо формулу метакуль: сила = radius^2 / distance^2
+			// Metaball formula: strength = radius^2 / distance^2
 			sum += (ball.r * ball.r) / distSq;
 		}
 	}
@@ -63,11 +63,11 @@ function drawLavaMetaballs(area, balls, ballColor) {
 	ctx.paint();
 	ctx.setOperator(2);
 
-	// Поріг для метакуль (зменшено для меншого зліплення)
+	// Metaball threshold (lowered to reduce blobbiness)
 	const threshold = 1.8;
-	const step = 3; // Крок сітки (менше = вища якість)
+	// Grid step (smaller = better quality)
 
-	// Проходимо по сітці та малюємо точки, де сила поля перевищує поріг
+	// Walk the grid and draw points where the field strength exceeds the threshold
 	ctx.setSourceRGB(ballColor.r, ballColor.g, ballColor.b);
 	const pointRadius = step * 0.8;
 	

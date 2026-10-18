@@ -85,15 +85,15 @@ const DigitalClockFace = GObject.registerClass(
 		};
 
 		_scheduleRepaint() {
-			// Адаптивний інтервал: якщо секунди не показуються - оновлювати раз на хвилину
+			// Adaptive interval: update once per minute when seconds are hidden
 			const showSeconds = this._showSeconds;
 			let delay;
 			
 			if (showSeconds) {
-				// З секундами - оновлювати кожну секунду
+				// With seconds shown: update every second
 				delay = 1000 - (Date.now() % 1000);
 			} else {
-				// Без секунд - оновлювати раз на хвилину
+				// Without seconds: update once per minute
 				const now = Date.now();
 				const msInMinute = 60000;
 				delay = msInMinute - (now % msInMinute);
@@ -215,15 +215,15 @@ const DigitalClockFace = GObject.registerClass(
 			const now = new Date();
 			const parts = this._buildTimeParts(now);
 			const minSide = Math.min(width, height);
-			// Риски ближче до країв віджета — менший відступ контуру.
+			// Ticks closer to the widget edges get a thinner stroke inset.
 			const inset = clamp(Math.round(minSide * 0.02), 2, 6);
 			const frameRadius = clamp(this._radius, 0, Math.floor(minSide / 2));
 			const textColor = colorFromHex(this._theme.text, this._dark ? [1, 1, 1] : [0.1, 0.09, 0.16]);
 
-			// — Риски: як на циферблаті віджета clock — 60 радіальних
-			// рисків (кожні 6°), кінці точно на краї рамки — але ВСІ
-			// ОДНАКОВІ: на «годинник» позначки (12, 6, 9…) не довші,
-			// без диференціації major/minor. —
+			// — Ticks: like the clock widget dial — 60 radial
+			// ticks (6° apart), ends exactly on the frame edge — but ALL
+			// ALIKE: hour markers (12, 6, 9…) are not longer,
+			// no major/minor differentiation. —
 			const tickEdgeInset = clamp(minSide * 0.02, 2, 6);
 			const tickLength = clamp(minSide * 0.045, 5, 12);
 			const tickWidth = clamp(minSide * 0.012, 1.0, 2.2);
@@ -231,8 +231,8 @@ const DigitalClockFace = GObject.registerClass(
 			const centerX = width / 2;
 			const centerY = height / 2;
 
-			// cairo_line_cap_t: BUTT=0, ROUND=1 (без глобального об'єкта
-			// Cairo — в ES-модулі він не гарантований і падає).
+			// cairo_line_cap_t: BUTT=0, ROUND=1 (without the global Cairo
+			// object — not guaranteed in an ES module and can crash).
 			// eslint-disable-next-line no-magic-numbers
 			cr.setLineCap(1);
 			cr.setLineWidth(tickWidth);
@@ -242,9 +242,9 @@ const DigitalClockFace = GObject.registerClass(
 				const angle = tick / 60 * Math.PI * 2 - Math.PI / 2;
 				const dx = Math.cos(angle);
 				const dy = Math.sin(angle);
-				// відстань по променю до найближчого краю рамки (як
-				// edgeDistance у clock, але з урахуванням широкої/високої
-				// форми, а не квадрату), мінус той самий відступ.
+				// ray distance to the nearest frame edge (same idea as
+				// edgeDistance in clock, but accounting for the wide/tall
+				// shape instead of a square), minus the same inset.
 				const tX = Math.abs(dx) > 1e-9 ? (width / 2 - tickEdgeInset) / Math.abs(dx) : Infinity;
 				const tY = Math.abs(dy) > 1e-9 ? (height / 2 - tickEdgeInset) / Math.abs(dy) : Infinity;
 				const edge = Math.min(tX, tY);

@@ -134,31 +134,33 @@ gsettings reset-recursively org.gnome.shell.extensions.desktop-widgets-r3nhick
 
 ## Development
 
-Regenerate the compiled schema after editing `schemas/*.gschema.xml`:
+Regenerate the compiled schema after editing `schemas/*.gschema.xml`.
+Note: `schemas/gschemas.compiled` is a local build artifact and is not tracked
+by git:
 
 ```bash
 glib-compile-schemas schemas/
 ```
 
-Extract translatable strings:
+Translations live as compiled catalogs in `locale/<lang>/LC_MESSAGES/`. To
+edit one, decompile it to a `.po`, edit, and compile back (the `.po` sources
+are not shipped):
 
 ```bash
-node tools/extract-strings.mjs
+msgunfmt -o /tmp/uk.po locale/uk/LC_MESSAGES/desktop-widgets@r3nhick.mo
+msgfmt /tmp/uk.po -o locale/uk/LC_MESSAGES/desktop-widgets@r3nhick.mo
 ```
 
-Compile translations:
-
-```bash
-msgfmt po/uk.po -o locale/uk/LC_MESSAGES/desktop-widgets@r3nhick.mo
-msgfmt po/ru.po -o locale/ru/LC_MESSAGES/desktop-widgets@r3nhick.mo
-```
-
-Pack the extension:
+Pack the extension for extensions.gnome.org (compiles the schema source on
+their side, so `gschemas.compiled` is not shipped):
 
 ```bash
 gnome-extensions pack \
-  --extra-source=widgets/ --extra-source=schemas/ --extra-source=icons/ --extra-source=utils/ \
+  --schema=org.gnome.shell.extensions.desktop-widgets-r3nhick \
+  --extra-source=widgets/ --extra-source=icons/ --extra-source=utils/ \
+  --extra-source=prefs/ --extra-source=layouts/ --extra-source=locale/ \
   --extra-source=paths.js --extra-source=logger.js --extra-source=workspaceIntegration.js \
+  --extra-source=layoutDoc.js --extra-source=utils.js \
   .
 ```
 

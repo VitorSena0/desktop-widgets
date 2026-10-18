@@ -155,9 +155,9 @@ function buildEmptyState(createLabel, onPick, theme, radius = 16) {
 		style: 'spacing: 12px;',
 	}));
 
-	// Та сама іконка, що й у налаштуваннях: dw-image-light / dw-image-dark.
-	// Вона не має суфікса -symbolic, тому GTK не заливає її суцільним
-	// кольором і лінійні штрихи лишаються видимими.
+	// Same icon as in the settings: dw-image-light / dw-image-dark.
+	// It has no -symbolic suffix, so GTK does not fill it with a solid
+	// color and the line strokes stay visible.
 	const iconName = theme?.dark ? 'dw-image-dark' : 'dw-image-light';
 	const iconFile = settingsIconPath(iconName);
 
@@ -171,8 +171,8 @@ function buildEmptyState(createLabel, onPick, theme, radius = 16) {
 			y_align: Clutter.ActorAlign.CENTER,
 		});
 	} else {
-		// Фолбек, якщо іконки немає на диску: символьна перемальовується
-		// кольором теми, тож читається на будь-якому тлі.
+		// Fallback when the icon file is missing: the symbolic one is tinted
+		// with the theme color, so it reads on any background.
 		icon = new St.Icon({
 			style_class: 'widget-photo-icon',
 			icon_name: 'image-x-generic-symbolic',
@@ -244,8 +244,8 @@ const PhotoFrame = GObject.registerClass(
 );
 
 export function style(theme) {
-	// Фон беремо з теми: жорсткий #242424 лишав віджет темним у світлій
-	// темі, а колір тексту theme.text тоді ще й ставав темним — невидимим.
+	// Take the background from the theme: a hardcoded #242424 kept the widget
+	// dark in the light theme, and theme.text went dark too — invisible.
 	return `background-color: ${theme?.background ?? '#242424'}; border-color: ${theme.border}; border-radius: ${theme?.radius ?? 16}px; padding: 0px;`;
 };
 

@@ -13,7 +13,7 @@ const COLUMNS = 2;
 const DIALOG_WIDTH = 1100;
 const DIALOG_HEIGHT = 650;
 
-// Каталог віджетів без gettext (ініціалізується пізніше)
+// Widget catalog without gettext (initialized later)
 const WIDGET_CATALOG_DATA = [
 	{
 		type: 'clock',
@@ -175,7 +175,7 @@ export const WidgetPickerDialog = GObject.registerClass({
 		this._extensionPath = extensionPath;
 		this._ = gettextFn;
 
-		// Підключаємо CSS
+		// Load the CSS
 		this._loadCSS();
 
 		this._buildUI();
@@ -200,14 +200,14 @@ export const WidgetPickerDialog = GObject.registerClass({
 	_buildUI() {
 		const _ = this._;
 
-		// Головний контейнер
+		// Root container
 		const mainBox = new Gtk.Box({
 			orientation: Gtk.Orientation.VERTICAL,
 			spacing: 0,
 		});
 		this.set_child(mainBox);
 
-		// Заголовок без пошуку
+		// Header, no search
 		const headerBar = new Gtk.HeaderBar();
 		headerBar.set_show_title_buttons(true);
 		headerBar.set_title_widget(new Gtk.Label({
@@ -217,7 +217,7 @@ export const WidgetPickerDialog = GObject.registerClass({
 
 		mainBox.append(headerBar);
 
-		// Прокручувана область
+		// Scrollable area
 		const scrolled = new Gtk.ScrolledWindow({
 			vexpand: true,
 			hexpand: true,
@@ -226,7 +226,7 @@ export const WidgetPickerDialog = GObject.registerClass({
 		});
 		mainBox.append(scrolled);
 
-		// Контейнер для категорій
+		// Category container
 		const contentBox = new Gtk.Box({
 			orientation: Gtk.Orientation.VERTICAL,
 			spacing: 24,
@@ -237,7 +237,7 @@ export const WidgetPickerDialog = GObject.registerClass({
 		});
 		scrolled.set_child(contentBox);
 
-		// Групуємо віджети за категоріями
+		// Group widgets by category
 		const categorized = {};
 
 		for (const widgetData of WIDGET_CATALOG_DATA) {
@@ -254,7 +254,7 @@ export const WidgetPickerDialog = GObject.registerClass({
 			categorized[widgetData.category].push(widget);
 		}
 
-		// Додаємо категорії
+		// Add the categories
 		for (const [categoryKey, widgets] of Object.entries(categorized)) {
 			const categoryName = _(CATEGORY_KEYS[categoryKey] || categoryKey);
 			const categoryBox = this._buildCategory(categoryName, widgets);
@@ -268,7 +268,7 @@ export const WidgetPickerDialog = GObject.registerClass({
 			spacing: 12,
 		});
 
-		// Назва категорії
+		// Category name
 		const categoryLabel = new Gtk.Label({
 			label: categoryName,
 			xalign: 0,
@@ -277,15 +277,15 @@ export const WidgetPickerDialog = GObject.registerClass({
 		});
 		categoryBox.append(categoryLabel);
 
-		// Сітка карток: Gtk.Grid, а не Gtk.FlowBox.
+		// Card grid: Gtk.Grid, not Gtk.FlowBox.
 		//
-		// Чому не FlowBox: при homogeneous:true він вирівнює картки за найширшою
-		// в категорії. Найширшою робить не width_request, а власний розмір
-		// текстури всередині Gtk.Picture - SVG-и в icons/widgets мають
-		// інтринсивні розміри аж до 480x270. У Productivity лежить
-		// app_launcher.svg (480px), тому FlowBox вирішував, що вміститься лише
-		// одна картка на ряд, і розтягував її на всю ширину. Grid від розміру
-		// вмісту не залежить - позиція рахується як index % COLUMNS.
+		// Why not FlowBox: with homogeneous:true it sizes every card by the widest
+		// card in the category — set not by width_request but by the intrinsic
+		// size of the texture in Gtk.Picture. SVGs in icons/widgets
+		// can be as large as 480x270. Productivity contains
+		// app_launcher.svg (480px), so FlowBox decided only one card fits per
+		// row and stretched it full width. Grid ignores texture size:
+		// a position is simply index % COLUMNS.
 		const grid = new Gtk.Grid({
 			column_spacing: 12,
 			row_spacing: 12,
@@ -295,9 +295,9 @@ export const WidgetPickerDialog = GObject.registerClass({
 			row_homogeneous: true,
 		});
 
-		// Один SizeGroup на колонку: усі картки в ній ділять ширину, тож ряд
-		// виглядає рівним навіть тоді, коли в останньому рядку лишилась одна
-		// картка (5 віджетів при 2 колонках -> 2+2+1).
+		// One SizeGroup per column: cards in it share the width, so a row looks
+		// even when a single card is left in the last row
+		// (5 widgets in 2 columns -> 2+2+1).
 		const columnGroups = [];
 		for (let i = 0; i < COLUMNS; i++) {
 			columnGroups.push(new Gtk.SizeGroup({ mode: Gtk.SizeGroupMode.HORIZONTAL }));
@@ -317,8 +317,8 @@ export const WidgetPickerDialog = GObject.registerClass({
 	}
 
 	_buildWidgetCard(widgetMeta) {
-		// Картка тепер не кнопка, а контейнер — клікабельна область зверху
-		// (прев'ю + текст) і окрема кнопка "Add" знизу.
+		// The card is a container, not a button — a clickable area on top
+		// (preview + text) with a separate "Add" button at the bottom.
 		const card = new Gtk.Box({
 			orientation: Gtk.Orientation.VERTICAL,
 			css_classes: ['card', 'widget-picker-card'],
@@ -331,7 +331,7 @@ export const WidgetPickerDialog = GObject.registerClass({
 			spacing: 8,
 		});
 
-		// Клікабельна область зверху (прев'ю, назва, опис)
+		// Clickable area on top (preview, name, description)
 		const previewButton = new Gtk.Button({
 			css_classes: ['flat'],
 		});
@@ -341,28 +341,28 @@ export const WidgetPickerDialog = GObject.registerClass({
 		});
 		previewButton.set_child(cardBox);
 
-		// SVG іконка
+		// Widget icon
 		const iconPath = `${this._extensionPath}/icons/widgets/${widgetMeta.icon}`;
 		const iconFile = Gio.File.new_for_path(iconPath);
 
 		let iconWidget;
 		if (iconFile.query_exists(null)) {
-			// Масштабуємо під час завантаження, а не віддаємо оригінальну
-			// текстуру. SVG-и в icons/widgets мають інтринсивні розміри до
-			// 480x270, і Gtk.Picture з такою текстурою робить картку
-			// "ширшою за налаштовану": width_request задає лише МІНІМУМ, а
-			// natural width лишається 480px. У підсумку картка в FlowBox
-			// виглядала набагато ширшою за задану, а в Grid розсувала сусідні
-			// колонки. new_from_file_at_scale зберігає пропорції (true) і
-			// повертає текстуру рівно розміром у прев'ю.
+			// Scale at load time instead of handing over the original
+			// texture: SVGs in icons/widgets have intrinsic sizes up to
+			// 480x270, and a Gtk.Picture holding such a texture makes the card
+			// "wider than configured": width_request sets only the MINIMUM, while
+			// the natural width stays 480px. As a result the FlowBox card
+			// looked much wider than configured, and in Grid it pushed neighboring
+			// columns apart. new_from_file_at_scale keeps the aspect ratio (true) and
+			// returns a texture exactly the size of the preview.
 			let paintable = null;
 			try {
 				const pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(
 					iconPath, PREVIEW_WIDTH, PREVIEW_HEIGHT, true);
 				paintable = Gdk.Texture.new_for_pixbuf(pixbuf);
 			} catch (e) {
-				// librsvg недоступний - віддаємо оригінал, Gtk.Picture
-				// відмалює його через content_fit CONTAIN.
+				// librsvg unavailable — fall back to the original; Gtk.Picture
+				// renders it via content_fit CONTAIN.
 				paintable = Gdk.Texture.new_from_file(iconFile);
 			}
 
@@ -374,7 +374,7 @@ export const WidgetPickerDialog = GObject.registerClass({
 				content_fit: Gtk.ContentFit.CONTAIN,
 			});
 		} else {
-			// Fallback на symbolic icon
+			// Fallback to a symbolic icon
 			iconWidget = new Gtk.Image({
 				icon_name: 'application-x-addon-symbolic',
 				pixel_size: 48,
@@ -388,7 +388,7 @@ export const WidgetPickerDialog = GObject.registerClass({
 		iconBox.append(iconWidget);
 		cardBox.append(iconBox);
 
-		// Назва віджета
+		// Widget name
 		const label = new Gtk.Label({
 			label: widgetMeta.label,
 			xalign: 0.5,
@@ -399,7 +399,7 @@ export const WidgetPickerDialog = GObject.registerClass({
 		});
 		cardBox.append(label);
 
-		// Опис
+		// Description
 		const desc = new Gtk.Label({
 			label: widgetMeta.description,
 			xalign: 0.5,
@@ -412,7 +412,7 @@ export const WidgetPickerDialog = GObject.registerClass({
 
 		card.append(previewButton);
 
-		// Кнопка "Add" знизу
+		// The "Add" button at the bottom
 		const addButton = new Gtk.Button({
 			label: this._('Add'),
 			css_classes: ['suggested-action'],
@@ -421,7 +421,7 @@ export const WidgetPickerDialog = GObject.registerClass({
 
 		card.append(addButton);
 
-		// Обробка кліку: і на прев'ю, і на "Add" емітять сигнал, але НЕ закривають діалог
+		// Click handling: both the preview and "Add" emit a signal but DO NOT close the dialog
 		const onSelect = () => {
 			this.emit('widget-selected', widgetMeta.type);
 		};
@@ -432,7 +432,7 @@ export const WidgetPickerDialog = GObject.registerClass({
 	}
 });
 
-// Функція для відкриття діалогу
+// Entry point to open the dialog
 export function openWidgetPicker(parent, extensionPath, gettextFn, onWidgetSelected) {
 	const dialog = new WidgetPickerDialog(parent, extensionPath, gettextFn);
 

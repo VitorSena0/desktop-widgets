@@ -163,11 +163,11 @@ function isValidAccel(mask, keyval) {
 
 export default class WidgetsPrefs extends ExtensionPreferences {
     /**
-     * Іконки розширення не мають суфікса `-symbolic`: GTK для таких файлів
-     * бере форму шляху і заливає її суцільним кольором, через що лінійні
-     * lucide-іконки перетворюються на плями (fill="none" ігнорується).
-     * Тому кожна іконка має два кольорові варіанти, а ми обираємо потрібний
-     * і одразу перемальовуємо всі зареєстровані місця при зміні теми.
+     * Extension icons have no `-symbolic` suffix: for such files GTK
+     * takes the path outline and fills it solid, which turns the line
+     * lucide icons into blobs (fill="none" is ignored).
+     * That is why every icon has two color variants; we pick the right one
+     * and repaint all registered spots when the theme changes.
      */
     fillPreferencesWindow(window) {
         this._window = window;
@@ -177,7 +177,7 @@ export default class WidgetsPrefs extends ExtensionPreferences {
         window.set_title(_('Desktop Widgets'));
         window.set_search_enabled(false);
 
-        // Збільшуємо іконки в бічній панелі через CSS.
+        // Enlarge the sidebar icons via CSS.
         const cssProvider = new Gtk.CssProvider();
         cssProvider.load_from_data(
             'navigation-sidebar row image { min-width: 32px; min-height: 32px; -gtk-icon-size: 32px; }',
@@ -391,7 +391,7 @@ export default class WidgetsPrefs extends ExtensionPreferences {
             icon_name: page.get_icon_name(),
         });
         
-        // Зберігаємо зв'язок між page та rowIcon для синхронізації іконок
+        // Keep the page → rowIcon mapping so the icons stay in sync
         page._sidebarIcon = rowIcon;
         
         const rowLabel = new Gtk.Label({
@@ -665,7 +665,7 @@ export default class WidgetsPrefs extends ExtensionPreferences {
             margin_top: 12,
         });
 
-        // Старий dropdown спосіб
+        // Old dropdown approach
         const dropdownRow = new Adw.ActionRow({
             title: _('Quick add'),
             subtitle: _('Select widget type from dropdown'),
@@ -699,7 +699,7 @@ export default class WidgetsPrefs extends ExtensionPreferences {
         dropdownRow.add_suffix(addBox);
         addGroup.add(dropdownRow);
 
-        // Новий діалог спосіб
+        // New dialog approach
         const galleryRow = new Adw.ActionRow({
             title: _('Widget gallery'),
             subtitle: _('Browse all widgets with icons and search'),
@@ -2763,10 +2763,10 @@ export default class WidgetsPrefs extends ExtensionPreferences {
     }
 
     /**
-     * Рядок посилання на сторінці «Про розширення».
-     * `iconName` — базова назва нашої іконки (без суфікса теми), з
-     * `icons/settings/`. GTK не шукає їх у темі (немає -symbolic), тож
-     * вантажимо файл напряму й обираємо варіант -light/-dark за темою.
+     * A link row on the About page.
+     * `iconName` is the base name of our icon (no theme suffix), from
+     * `icons/settings/`. GTK does not look these up in the icon theme (no -symbolic),
+     * so we load the file directly and pick -light/-dark by theme.
      */
     _aboutLinkRow(title, iconName, url, subtitle) {
         const row = new Adw.ActionRow({
@@ -2788,7 +2788,7 @@ export default class WidgetsPrefs extends ExtensionPreferences {
             if (file && Gio.File.new_for_path(file).query_exists(null))
                 icon.set_from_file(file);
             else
-                icon.set_from_icon_name(iconName); // фолбек для сторонніх іконок
+                icon.set_from_icon_name(iconName); // fallback for third-party icons
         };
         applyIcon();
         Adw.StyleManager.get_default().connect('notify::dark', applyIcon);

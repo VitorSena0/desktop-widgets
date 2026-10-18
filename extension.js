@@ -11,6 +11,22 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 
+/**
+ * Desktop Widgets — entry point for GNOME Shell.
+ *
+ * Layout of this file (top → bottom):
+ *   1. Grid math (cell sizes, sizeForWidget)         — how sizes map to cells
+ *   2. WIDGET_MODULES registry                       — every widget in one list
+ *   3. WidgetController                              — layer, drag & snap,
+ *      edit mode, settings sync; knows nothing about widget internals
+ *   4. DesktopWidgetsExtension                       — lifecycle (enable/disable)
+ *
+ * Widgets themselves live in widgets/<type>/widget.js and are self-contained:
+ * each exports type, label, defaultSize, supportedSizes, style(theme) and
+ * render({body, ...}). Add new widgets by creating the module and registering
+ * it in WIDGET_MODULES (and in prefs.js WIDGET_TYPES).
+ */
+
 import * as AppLauncherWidget from './widgets/applauncher/widget.js';
 import * as BatteryWidget from './widgets/battery/widget.js';
 import * as BinaryClockWidget from './widgets/binaryclock/widget.js';
@@ -87,12 +103,12 @@ const WIDGET_CLICK_TYPES = new Set([
   ...Object.keys(WIDGET_APP_IDS),
   'github',
 ]);
-// Сітка віджета: [колонки, рядки, сім'я]. Джерело істини про форму розміру.
-// Віджет на n клітинок має ширину n * база + (n - 1) * gap, тож 2x1 сідає
-// впритук до двох 1x1 з одним зазором між ними, а не ширше за них.
+// Widget grid: [columns, rows, family]. Single source of truth for size shape.
+// An n-cell widget is n * base + (n - 1) * gap wide, so a 2x1 sits flush
+// against two 1x1 with one gap between them, not wider than them.
 const MAIN_FAMILY = 'main';
 const MINI_FAMILY = 'mini';
-const COMPACT_FAMILY = 'compact'; // Широкий але низький
+// wide but short
 const WIDGET_CELL_SIZES = {
   [MAIN_FAMILY]: CELL_SIZE,
   [MINI_FAMILY]: MINI_CELL_SIZE,
@@ -103,7 +119,7 @@ const WIDGET_SIZE_SHAPES = {
   mini: [2, 1, MINI_FAMILY], // 2x1 mini
   portraitmini: [1, 2, MINI_FAMILY], // 1x2 mini
   minilarge: [2, 2, MINI_FAMILY], // 2x2 mini
-  compact: [2, 1, COMPACT_FAMILY], // 2x1 compact (широкий низький)
+  // 2x1 compact (wide and short)
   small: [1, 1, MAIN_FAMILY], // 1x1
   medium: [2, 1, MAIN_FAMILY], // 2x1
   portrait: [1, 2, MAIN_FAMILY], // 1x2
@@ -200,8 +216,8 @@ function defaultWidgetPositions(gap) {
     return null;
   }
 
-  // Кожен край пресета береться з розміру віджета, який його тримає: правий
-  // стовпець це 2x1, лівий маленький віджет це 1x1, міні рядок це 2x1 mini.
+  // Each preset edge comes from the widget that holds it: the right
+  // column is 2x1, the small left widget is 1x1, the mini row is 2x1 mini.
   const sizes = widgetSizesFor(gap);
   const union = unionOfMonitors(monitors);
   const ox = primary.x - union.x;
@@ -308,7 +324,7 @@ function sizeForWidget(widget, gap) {
   const [cols, rows, family] = WIDGET_SIZE_SHAPES[key];
   const base = WIDGET_CELL_SIZES[family];
 
-  // Підтримка прямокутних клітинок (COMPACT_FAMILY)
+  // Rectangular cell support (COMPACT_FAMILY)
   if (typeof base === 'object') {
     return [
       cols * base.width + (cols - 1) * gap,
@@ -419,6 +435,9 @@ class WidgetController {
     this._pendingAppearance = {rebuild: false, refresh: false};
     this._dragSafetyId = 0;
     this._raiseIdleId = 0;
+    this._pinEditSyncId = 0;
+    this._pinSyncId = 0;
+    this._pinStyleIdleId = 0;
     this._layerStackDirty = false;
     this._editMode = false;
     this._dragActor = null;
@@ -474,8 +493,8 @@ class WidgetController {
       'changed::edit-mode', () => this.setEditMode(this._layoutSettings.get_boolean('edit-mode')),
       'changed::widget-gap', () => {
         this._widgetGap = this._readWidgetGap();
-        // Один крок розкладки на осідання повзунка: перебудувати актори за
-        // новим зазором, розкласти їх з анімацією і зберегти результат.
+        // One layout step per slider stop: rebuild the actors with
+        // the new gap, lay them out with animation, and save the result.
         this._debounce('gap-rebuild', () => {
           this._rebuildWidgets();
           this._resolveLayout(null, true, true);
@@ -525,8 +544,8 @@ class WidgetController {
     this._createLayer();
     this._rebuildWidgets();
 
-    // Розкладка, збережена до нової формули розмірів, перепаковується один раз
-    // після того, як шар та актори вже існують.
+    // A layout saved before the new size formula is repacked once,
+    // after the layer and actors already exist.
     if (this._pendingRepack) {
       this._pendingRepack = false;
       this._resolveLayout(null, false, true);
@@ -563,7 +582,7 @@ class WidgetController {
       this._debounce('battery', () => this._refreshBatteryViews(), 100);
     });
 
-    // Відстеження fullscreen вікон для паузи анімацій
+    // Track fullscreen windows to pause animations
     this._fullscreenMonitorId = global.display.connectObject(
       'window-created', () => this._debounce('fullscreen-check', () => this._checkFullscreen(), 100),
       'restacked', () => this._debounce('fullscreen-check', () => this._checkFullscreen(), 100),
@@ -580,7 +599,7 @@ class WidgetController {
       this
     );
 
-    // Перевірка fullscreen при старті
+    // Check fullscreen state on startup
     this._checkFullscreen();
 
     if (this._layoutSettings.get_boolean('arrange-widgets')) {
@@ -604,7 +623,7 @@ class WidgetController {
     this._batteryDevicesUnsubscribe?.();
     this._batteryDevicesUnsubscribe = null;
 
-    // Очищення fullscreen підписок
+    // Clean up fullscreen subscriptions
     if (this._fullscreenMonitorId) {
       global.display.disconnectObject(this);
       global.workspace_manager.disconnectObject(this);
@@ -624,6 +643,21 @@ class WidgetController {
     if (this._raiseIdleId) {
       GLib.source_remove(this._raiseIdleId);
       this._raiseIdleId = 0;
+    };
+
+    if (this._pinEditSyncId) {
+      GLib.source_remove(this._pinEditSyncId);
+      this._pinEditSyncId = 0;
+    };
+
+    if (this._pinSyncId) {
+      GLib.source_remove(this._pinSyncId);
+      this._pinSyncId = 0;
+    };
+
+    if (this._pinStyleIdleId) {
+      GLib.source_remove(this._pinStyleIdleId);
+      this._pinStyleIdleId = 0;
     };
 
     global.stage.disconnectObject(this);
@@ -816,8 +850,8 @@ class WidgetController {
     const savedVersion = parsed.version ?? 1;
 
     if (savedVersion !== LAYOUT_VERSION) {
-      // Зсув на головний монітор уже застосовувався на шляху 1 -> 2, тож
-      // повторюємо його лише для схем без версії та для версії 1.
+      // The primary-monitor shift was already applied on path 1 -> 2, so
+      // apply it again only for versionless layouts and version 1.
       if (savedVersion === 1) {
         const union = unionOfMonitors(effectiveMonitors());
         const primary = Main.layoutManager.primaryMonitor;
@@ -834,8 +868,8 @@ class WidgetController {
       };
 
       this._needsLayoutPersist = true;
-      // Перепакування можливе лише після того, як існують шар та віджети,
-      // тому enable() розбирає цей прапорець після першої перебудови.
+      // A repack is only possible once the layer and widgets exist,
+      // so enable() consumes this flag after the first rebuild.
       this._pendingRepack = true;
     };
 
@@ -857,8 +891,8 @@ class WidgetController {
 
   _saveWidgets() {
     try {
-      // _lastSavedJson ставиться перед записом, щоб обробник changed::layout-json
-      // впізнав власний запис і не перебудовував віджети.
+      // _lastSavedJson is set before writing so that the changed::layout-json
+      // handler recognizes its own write and does not rebuild the widgets.
       this._lastSavedJson = layoutJson(this._widgets);
       this._layoutSettings.set_string(LAYOUT_KEY, this._lastSavedJson);
     } catch (e) {
@@ -905,13 +939,13 @@ class WidgetController {
   _pauseAnimations() {
     this._animationsPaused = true;
     
-    // 🚨 АГРЕСИВНА FULLSCREEN ОПТИМІЗАЦІЯ
-    // Повна зупинка всіх віджетів та таймерів
+    // 🚨 AGGRESSIVE FULLSCREEN OPTIMIZATION
+    // Stop every widget and timer completely
     
     // Debug logging
     console.log('[desktop-widgets] FULLSCREEN MODE: Pausing all widgets');
     
-    // 1. Призупинити screen time tracking
+    // 1. Pause screen time tracking
     try {
       screenTimeEngine.setPaused(true);
       console.log('[desktop-widgets] ScreenTimeEngine paused');
@@ -919,7 +953,7 @@ class WidgetController {
       console.error('Failed to pause screenTimeEngine:', e);
     }
     
-    // 2. Призупинити SystemMonitor polling
+    // 2. Pause SystemMonitor polling
     try {
       if (SystemWidget && SystemWidget.monitor && typeof SystemWidget.monitor.pausePolling === 'function') {
         SystemWidget.monitor.pausePolling();
@@ -929,7 +963,7 @@ class WidgetController {
       console.error('Failed to pause SystemMonitor:', e);
     }
     
-    // 3. Призупинити всі анімовані віджети
+    // 3. Pause every animated widget
     let pausedCount = 0;
     for (const view of this._views.values()) {
       if (view.widgetInstance && typeof view.widgetInstance.pause === 'function') {
@@ -947,13 +981,13 @@ class WidgetController {
   _resumeAnimations() {
     this._animationsPaused = false;
     
-    // 🚨 АГРЕСИВНА FULLSCREEN ОПТИМІЗАЦІЯ
-    // Відновлення всіх віджетів та таймерів
+    // 🚨 AGGRESSIVE FULLSCREEN OPTIMIZATION
+    // Restore every widget and timer
     
     // Debug logging
     console.log('[desktop-widgets] EXITED FULLSCREEN: Resuming all widgets');
     
-    // 1. Відновити screen time tracking
+    // 1. Resume screen time tracking
     try {
       screenTimeEngine.setPaused(false);
       console.log('[desktop-widgets] ScreenTimeEngine resumed');
@@ -961,7 +995,7 @@ class WidgetController {
       console.error('Failed to resume screenTimeEngine:', e);
     }
     
-    // 2. Відновити SystemMonitor polling
+    // 2. Resume SystemMonitor polling
     try {
       if (SystemWidget && SystemWidget.monitor && typeof SystemWidget.monitor.resumePolling === 'function') {
         SystemWidget.monitor.resumePolling();
@@ -971,7 +1005,7 @@ class WidgetController {
       console.error('Failed to resume SystemMonitor:', e);
     }
     
-    // 3. Відновити всі анімовані віджети
+    // 3. Resume every animated widget
     let resumedCount = 0;
     for (const view of this._views.values()) {
       if (view.widgetInstance && typeof view.widgetInstance.resume === 'function') {
@@ -1204,10 +1238,10 @@ class WidgetController {
     const theme = this._gnomeTheme();
     let styleStr = widgetModule.style(theme);
 
-    // Текстовий колір рамки задаємо тут, а не в stylesheet.css: там він був
-    // захардкоджений під темну тему, тож у світлій віджети лишались без
-    // тексту. Модулі, що ставлять власний color, ставлять такий самий
-    // theme.text, тому перекриття безпечне.
+    // The edit-border text color is set here, not in stylesheet.css: there it was
+    // hardcoded for the dark theme, so in the light theme widgets lost their
+    // text. Modules that set their own color use the same
+    // theme.text, so overriding it is safe.
     styleStr += ` color: ${theme.text};`;
 
     // Apply custom global styles dynamically
@@ -1371,7 +1405,12 @@ class WidgetController {
     // After entering edit mode and creating all edit controls, sync the visual
     // state of pinned widgets. Use timeout to ensure buttons are fully constructed.
     if (enabled) {
-      GLib.timeout_add(GLib.PRIORITY_DEFAULT, 100, () => {
+      if (this._pinEditSyncId) {
+        GLib.source_remove(this._pinEditSyncId);
+      };
+
+      this._pinEditSyncId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 100, () => {
+        this._pinEditSyncId = 0;
         for (const view of this._views.values()) {
           if (view.widget.pinned && view.pinButton) {
             this._syncPinButtonState(view.widget.id);
@@ -1466,7 +1505,12 @@ class WidgetController {
     this._saveWidgets();
     
     // Sync the visual state after save completes and any potential rebuilds settle.
-    GLib.timeout_add(GLib.PRIORITY_DEFAULT, 50, () => {
+    if (this._pinSyncId) {
+      GLib.source_remove(this._pinSyncId);
+    };
+
+    this._pinSyncId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 50, () => {
+      this._pinSyncId = 0;
       this._syncPinButtonState(id);
       return GLib.SOURCE_REMOVE;
     });
@@ -1633,8 +1677,8 @@ class WidgetController {
       widget.x + layerX + width / 2,
       widget.y + layerY + height / 2);
 
-    // Знайти віджет, з яким перетинаємося. Pinned підходить як ціль:
-    // він не рухається, тому віджет, що тягнеш, прилипає поруч з ним.
+    // Find a widget to intersect with. A pinned widget works as a target:
+    // it stays put, so the dragged widget snaps next to it.
     const overlapping = this._widgets.find(other =>
       other !== widget && rectsOverlap(widgetRect, this._rectFor(other), gap));
 
@@ -1644,7 +1688,7 @@ class WidgetController {
 
     const [ow, oh] = this._sizeFor(overlapping);
 
-    // Чотири позиції вздовж краю зачепленого віджета: зліва, справа, зверху, знизу.
+    // Four positions along the snapped widget's edge: left, right, top, bottom.
     const candidates = [
       {x: overlapping.x - width - gap, y: widget.y},
       {x: overlapping.x + ow + gap, y: widget.y},
@@ -1652,15 +1696,15 @@ class WidgetController {
       {x: widget.x, y: overlapping.y + oh + gap},
     ];
 
-    // Кандидат має вміщуватися в моніторі з відступом gap: інакше після clamp'у
-    // віджет повернеться назад на зачеплений стос і лишиться в перетині.
+    // A candidate must fit on the monitor with the gap inset: otherwise,
+    // after clamping it slides back onto the snapped stack and keeps overlapping.
     const minX = (monitor?.x ?? layerX) - layerX + gap;
     const minY = (monitor?.y ?? layerY) - layerY + topYFor(monitor) + gap;
     const maxX = monitor ? Math.max(minX, monitor.x - layerX + monitor.width - width - gap) : Infinity;
     const maxY = monitor ? Math.max(minY, monitor.y - layerY + monitor.height - height - gap) : Infinity;
     const inBounds = (x, y) => x >= minX && x <= maxX && y >= minY && y <= maxY;
 
-    // Найближча вільна позиція за Manhattan distance від місця drop.
+    // Nearest open position by Manhattan distance from the drop point.
     let best = null;
     let bestDistance = Infinity;
 
@@ -1680,7 +1724,7 @@ class WidgetController {
       };
     };
 
-    // Якщо всі чотири краї зайняті чи поза межами, шукаємо будь-яку вільну клітинку на сітці монітора.
+    // If all four edges are taken or out of bounds, find any free cell on the monitor grid.
     if (!best) {
       return this._findOpenPosition(widget, this._widgets);
     };
@@ -1688,9 +1732,9 @@ class WidgetController {
     return {x: best.x, y: best.y};
   };
 
-  // Розсунути «стос» (щільний вертикальний стовпчик або горизонтальний ряд),
-  // щоб вмістити віджет без викидання його у вільну клітинку:
-  // середній (або закріплений / вказаний) лишається на місці, решта розсувається.
+  // Spread the "stack" (a dense vertical column or horizontal row)
+  // to make room for a widget without dropping it into a free cell:
+  // the middle (pinned / anchor) widget stays, the rest are pushed apart.
   _spaceOut(widget, pool, anchorTarget = null) {
     if (!this._layer || pool.length < 2) {
       return [];
@@ -1711,7 +1755,7 @@ class WidgetController {
 
     const others = pool.filter(other => other !== widget);
 
-    // Вертикальний стос: віджети в тій самій колонці (перетин проєкцій по X).
+    // Vertical stack: widgets in the same column (overlapping X projections).
     const columnMates = others.filter(other => {
       const otherRect = this._rectFor(other);
 
@@ -1727,7 +1771,7 @@ class WidgetController {
       };
     };
 
-    // Горизонтальний ряд: віджети в тому самому ряду (перетин проєкцій по Y).
+    // Horizontal row: widgets in the same row (overlapping Y projections).
     const rowMates = others.filter(other => {
       const otherRect = this._rectFor(other);
 
@@ -1746,8 +1790,8 @@ class WidgetController {
     return [];
   };
 
-  // Щільний безперервний ланцюжок віджетів навколо widget вздовж осі:
-  // сусіди, що прилягають один до одного з відступом не більшим за gap.
+  // Dense uninterrupted chain of widgets around the anchor along the axis:
+  // neighbors touching each other with a spacing no larger than the gap.
   _tightRun(widget, mates, axis) {
     const gap = this._widgetGap ?? WIDGET_GAP;
     const group = [...mates, widget];
@@ -1782,10 +1826,10 @@ class WidgetController {
     return group.slice(start, end + 1);
   };
 
-  // Переставити членів стосу вздовж осі так, щоб усі відступи стали точними.
-  // Якір (середній / закріплений / anchorTarget) не рухається; якщо з одного боку
-  // немає місця — якір переноситься на край; якщо не вміщується зовсім —
-  // зайві віджети виїжджають у вільні клітинки (_findOpenPosition).
+  // Rearrange the stack members along the axis so every spacing becomes exact.
+  // The anchor (middle / pinned / anchorTarget) stays; if there is no room
+  // on one side it moves to the edge; if nothing fits at all,
+  // surplus widgets are ejected into free cells (_findOpenPosition).
   _spaceAxis(members, axis, monitor, pool, gap, layerX, layerY, anchorTarget) {
     const coord = widget => axis === 'y' ? widget.y : widget.x;
     const setCoord = (widget, value) => {
@@ -1849,15 +1893,15 @@ class WidgetController {
 
     if (pinnedIndexes.length === 0) {
       if (placed.overflowLow && placed.overflowHigh) {
-        // Не вміщується ні з одного боку: якір на край, зайве виїде.
+        // Nothing fits on either side: anchor to the edge, surplus goes free.
         anchorIndex = start;
         placed = place(start, end);
       } else if (placed.overflowLow) {
-        // Нема місця зверху/зліва: крайній лишається, решта рухається від нього.
+        // No room top/left: the edge widget stays, the rest move away from it.
         anchorIndex = start;
         placed = place(start, end);
       } else if (placed.overflowHigh) {
-        // Нема місця знизу/справа: крайній лишається, решта рухається від нього.
+        // No room bottom/right: the edge widget stays, the rest move away from it.
         anchorIndex = end;
         placed = place(start, end);
       };
@@ -1876,7 +1920,7 @@ class WidgetController {
       return [];
     };
 
-    // Валідація: нові позиції не мають перетинатися з віджетами поза стосом.
+    // Validation: new positions must not overlap widgets outside the stack.
     const outside = pool.filter(member => !members.includes(member));
 
     for (let i = start; i <= end; i++) {
@@ -1904,7 +1948,7 @@ class WidgetController {
       };
     };
 
-    // Викинуті за межі стосу — у найближчу вільну клітинку.
+    // Ejected members drop into the nearest free cell.
     for (let i = 0; i < n; i++) {
       if (i >= start && i <= end) {
         continue;
@@ -2276,7 +2320,12 @@ class WidgetController {
 
     // Apply the pinned visual state if the widget is pinned.
     if (view.widget.pinned) {
-      GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
+      if (this._pinStyleIdleId) {
+        GLib.source_remove(this._pinStyleIdleId);
+      };
+
+      this._pinStyleIdleId = GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
+        this._pinStyleIdleId = 0;
         if (pinButton && !isActorDestroyed(pinButton)) {
           pinButton.set_style('background-color: #5b9de0; color: #ffffff; border-color: #5b9de0;');
         }
@@ -2559,7 +2608,7 @@ class WidgetController {
   _handleAppClickEvent(event) {
     const eventType = event.type();
     
-    // Пропускаємо всі клавіатурні події, щоб не блокувати системні скріншоти (Win+Shift+S)
+    // Let all key events through so system screenshots (Win+Shift+S) keep working
     if (eventType === Clutter.EventType.KEY_PRESS || 
         eventType === Clutter.EventType.KEY_RELEASE) {
       return Clutter.EVENT_PROPAGATE;
@@ -2636,8 +2685,8 @@ class WidgetController {
       drag = null;
       this._clampWidget(widget);
 
-      // Якщо віджет перетинається з іншими, прилипнути до найближчого вільного
-      // краю. Під час перетягування рухається лише перетягнутий віджет.
+      // If a widget overlaps others, snap it to the nearest free
+      // edge. While dragging, only the dragged widget moves.
       const gap = this._widgetGap ?? WIDGET_GAP;
       const widgetRect = this._rectFor(widget);
       const hasOverlap = this._widgets.some(other =>
@@ -2650,8 +2699,8 @@ class WidgetController {
         widget.y = snapped.y;
         this._clampWidget(widget);
 
-        // Страховка: якщо після snap+clamp віджет усе ще перетинається —
-        // відпустити його в найближчу вільну клітинку, щоб не лишався «застряглим».
+        // Failsafe: if the widget still overlaps after snap+clamp,
+        // drop it into the nearest free cell so it never stays stuck.
         if (this._widgets.some(other =>
           other !== widget && rectsOverlap(this._rectFor(widget), this._rectFor(other), gap))) {
           const open = this._findOpenPosition(widget, this._widgets);
@@ -2695,7 +2744,7 @@ class WidgetController {
         effectiveMonitors(),
         drag.baseStageX + stageX - drag.stageX + width / 2,
         drag.baseStageY + stageY - drag.stageY + height / 2);
-      log(`[desktop-widgets] drag gap=${gap} min=(${Math.round(minX)},${Math.round(minY)}) max=(${Math.round(maxX)},${Math.round(maxY)}) монітор=${monitorForDrag?.name ?? (monitor?.name ?? '?')} h=${monitorForDrag?.height ?? monitor?.height ?? '?'} wh=${this._layerX ?? 0}`)
+      log(`[desktop-widgets] drag gap=${gap} min=(${Math.round(minX)},${Math.round(minY)}) max=(${Math.round(maxX)},${Math.round(maxY)}) monitor=${monitorForDrag?.name ?? (monitor?.name ?? '?')} h=${monitorForDrag?.height ?? monitor?.height ?? '?'} wh=${this._layerX ?? 0}`)
 
       const snapped = this._snapEdges(widget, widget.x, widget.y);
 
@@ -3085,8 +3134,8 @@ class WidgetController {
     };
   };
 
-  // Розмір віджета завжди береться з поточного зазору, щоб актор і вміст
-  // ніколи не гадали різні числа.
+  // The widget size always comes from the current gap so that the actor and
+  // its content never disagree on the numbers.
   _sizeFor(widget) {
     return sizeForWidget(widget, this._widgetGap ?? WIDGET_GAP);
   };
@@ -3226,8 +3275,8 @@ class WidgetController {
       this._clampWidget(widget);
 
       if (settled.some(other => rectsOverlap(this._rectFor(widget), this._rectFor(other), gap))) {
-        // Спершу — розсування стосу (колонки/ряду) навколо якоря/середнього,
-        // і лише якщо не вийшло і перетин лишився — у вільну клітинку.
+        // First, try spreading the stack (column/row) around the anchor/middle,
+        // and only if that fails and overlap remains — a free cell.
         this._spaceOut(widget, settled, anchor === widget ? widget : null);
 
         if (settled.some(other => rectsOverlap(this._rectFor(widget), this._rectFor(other), gap))) {

@@ -1,6 +1,6 @@
 .widget-photo {
-    /* Фон задає theme.background у style(): жорсткий колір тут лишав би
-       рамку темною у світлій темі. */
+    /* The background comes from theme.background in style(): a hardcoded color
+       here would keep the frame dark in the light theme. */
     background-color: transparent;
     background-position: center;
     background-repeat: no-repeat;

@@ -1,18 +1,18 @@
-// Контракт документа розкладки: його версія та єдиний спосіб його записати.
-// Імпортується і розширенням, і вікном налаштувань, щоб обидва процеси
-// зберігали однакову версію.
+// Layout document contract: its version and the single write path.
+// Imported by both the extension and the prefs window so both sides
+// write the same version.
 
 const LAYOUT_KEY = 'layout-json';
 const LAYOUT_VERSION = 3;
 
-// Єдине місце, де версія потрапляє в документ, тож документ без version
-// неможливо створити ні з одного боку.
+// The only place a version is written into the document, so a document
+// without a version can never be produced on either side.
 function layoutJson(widgets) {
   return JSON.stringify({version: LAYOUT_VERSION, widgets});
 };
 
-// Порожній рядок означає «розкладку не задано»: розширення показує порожній
-// робочий стіл. Це не документ, тож версія тут не потрібна.
+// An empty string means "no layout set": the extension shows an empty
+// desktop. That is not a document, so no version is needed here.
 function clearLayout(settings) {
   settings.set_string(LAYOUT_KEY, '');
 };

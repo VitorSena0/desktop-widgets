@@ -128,19 +128,19 @@ export function render({ body, widget, theme, sizeForWidget, settings }) {
             }
         : isLarge
             ? {
-                // 2×2: комірку притиснуто до 15px, щоб крім 5 місяців
-                // влізло ще 5-й рядок статистики — pitch 15+1=16,
-                // weeks = floor((361-30+1)/16) = 20 тижнів (Jun..Oct),
-                // сітка стає на 14px нижчою, рівно під новий чип.
-                // monthLabels: у 2×2 видно рівно 5 міток місяців.
+                // 2×2: cells tightened to 15px so that besides 5 months
+                // the 5th stats row still fits — pitch 15+1=16,
+                // weeks = floor((361-30+1)/16) = 20 weeks (Jun..Oct),
+                // the grid gets 14px shorter, exactly above the new chip.
+                // monthLabels: 2×2 shows exactly 5 month labels.
                 avatar: 34, username: 16, badge: 16, label: 13, entryWidth: 170,
                 footer: 14, month: 15, spacing: 6, gap: 1, daysW: 30,
                 footerFont: 16, dayRows: translateDayRows(DAY_LABEL_ROWS), maxWeeks: 48, cellMax: 15, monthLabels: 5,
             }
             : {
-                // 2×1: комірку притиснуто до 10px, щоб у ширину вмістилося
-                // 26 тижнів (6 місяців) замість 5 — pitch 10+2=12,
-                // weeks = floor((361-28+2)/12) = 27. monthLabels: 6 міток.
+                // 2×1: cells tightened to 10px to fit
+                // 26 weeks (6 months) instead of 5 months — pitch 10+2=12,
+                // weeks = floor((361-28+2)/12) = 27. monthLabels: 6 labels.
                 avatar: 28, username: 14, badge: 12, label: 12, entryWidth: 150,
                 footer: 12, month: 14, spacing: 3, gap: 2, daysW: 28,
                 footerFont: 11, dayRows: translateDayRows(DAY_LABEL_ROWS), maxWeeks: 60, cellMax: 10, monthLabels: 6,
@@ -311,8 +311,8 @@ export function render({ body, widget, theme, sizeForWidget, settings }) {
     matrixBody.add_child(gridCanvas);
 
     // --- STATS (for large size only) ---
-    // statsBox тягнеться на весь залишок висоти між сіткою і футером,
-    // тобто чипи ділять простір порівну — жодних "дірок" перед футером.
+    // statsBox stretches over the leftover height between the grid and the footer,
+    // so chips split the space evenly — no gaps right above the footer.
     let statsBox = null;
     if (isLarge) {
         statsBox = new St.BoxLayout({
@@ -408,7 +408,7 @@ export function render({ body, widget, theme, sizeForWidget, settings }) {
         const estimatedLabelWidth = 30;
         const maxLabelX = contentW - dayLabelsWidth - estimatedLabelWidth;
 
-        // Перша колонка (тиждень), у якій починається кожен місяць сітки.
+        // First week column in which each month of the grid starts.
         let prevMonth = -1;
         const monthStarts = [];
         for (let w = 0; w < weeksToRender; w++) {
@@ -421,7 +421,7 @@ export function render({ body, widget, theme, sizeForWidget, settings }) {
                 prevMonth = month;
 
                 if (monthStarts.length && monthStarts[monthStarts.length - 1].w === w) {
-                    // Обидва місяці почалися в одному тижні — лишаємо новіший.
+                    // Both months start in the same week — keep the newer one.
                     monthStarts[monthStarts.length - 1].month = month;
                 } else {
                     monthStarts.push({w, month});
@@ -430,9 +430,9 @@ export function render({ body, widget, theme, sizeForWidget, settings }) {
             }
         }
 
-        // Мітка не має залазити на попередню: якщо тижневі колонки сусідніх
-        // місяців стоять дуже близько (частковий місяць на краю сітки),
-        // зсуваємо нову мітку на мінімальний відступ, а не викидаємо її.
+        // A label must not overlap the previous one: when the week columns of adjacent
+        // months end up too close (a partial month at the grid edge),
+        // shift the new label by the minimum spacing instead of dropping it.
         const placed = [];
         for (const start of monthStarts) {
             let x = start.w * pitch;
@@ -447,15 +447,15 @@ export function render({ body, widget, theme, sizeForWidget, settings }) {
             placed.push({x, month: start.month});
         }
 
-        // Якщо для розміру задана кількість міток і їх вийшло більше —
-        // обрізаємо НАЙСТАРІШІ (часткові місяці на лівому краю сітки).
+        // If the size defines a label count and more were produced —
+        // trim the OLDEST ones (partial months on the left edge of the grid).
         if (Number.isFinite(layout.monthLabels) && placed.length > layout.monthLabels) {
             placed.splice(0, placed.length - layout.monthLabels);
         }
 
-        // Рівний інтервал між мітками: перша й остання стоят на своїх
-        // позиціях, проміжні розподіляються рівномірно між ними (інакше
-        // відступ скакатиме 48/60px — кількість тижнів у місяці різна).
+        // Even spacing between labels: the first and last keep their positions,
+        // the in-between ones are distributed evenly (otherwise the spacing
+        // would jump between 48/60px — months have different week counts).
         if (placed.length > 1) {
             const firstX = placed[0].x;
             const lastX = placed[placed.length - 1].x;
@@ -596,7 +596,7 @@ export function render({ body, widget, theme, sizeForWidget, settings }) {
             }
         }
 
-        // Найпродуктивніший день серед усіх днів, які є у даних GitHub.
+        // The most productive day among all days present in the GitHub data.
         let bestCount = 0;
         let bestKey = null;
         for (const [key, count] of byDate) {
@@ -608,9 +608,9 @@ export function render({ body, widget, theme, sizeForWidget, settings }) {
 
         activeDaysCount = active;
         bestDayCount = bestCount;
-        // 'YYYY-MM-DD' розбираю вручну: GLib.DateTime.new_from_iso8601 +
-        // format_utf8 — ловушка GJS (format_utf8 не існує і computeStats
-        // падав, залишаючи блок статистики порожнім).
+        // 'YYYY-MM-DD' is parsed manually: GLib.DateTime.new_from_iso8601 +
+        // format_utf8 is a GJS trap (format_utf8 does not exist and computeStats
+        // crashed, leaving the stats block empty).
         if (bestKey) {
             const [, bM, bD] = bestKey.split('-').map(Number);
             bestDayLabel = `${String(bD).padStart(2, '0')} ${monthNames()[bM - 1] ?? ''}`;
@@ -638,8 +638,8 @@ export function render({ body, widget, theme, sizeForWidget, settings }) {
             { icon: 'weather-clear-symbolic', label: _('Best day'), value: `${formatCount(bestDayCount)} · ${bestDayLabel}` },
         ];
 
-        // Кожен показник — окремий чип на всю ширину: 4 чипи × ~30px
-        // влазить у статбюджет 2×2 (~138px) без переповнення.
+        // Each metric is a full-width chip: 4 chips × ~30px
+        // fit the 2×2 stats budget (~138px) without overflow.
         for (const stat of statsData) {
             const chip = new St.BoxLayout({
                 x_expand: true,
@@ -751,7 +751,7 @@ export function render({ body, widget, theme, sizeForWidget, settings }) {
                 if (!cancelled) {
                     setProfileUrl(false);
                     const cached = latestByDate.size > 0;
-                    // Показуємо помилку тільки якщо немає кешу
+                    // Show the error only when there is no cache
                     if (cached && lastSyncTime) {
                         setStatus(isMini
                             ? lastSyncTime.format('%H:%M')
@@ -917,7 +917,7 @@ export function render({ body, widget, theme, sizeForWidget, settings }) {
         const yearTotal = latestYear !== null ? (data.total[latestYear] ?? sumAll) : sumAll;
         badgeLabel.text = _('%s commits').format(formatCount(yearTotal));
         
-        // Відновлюємо lastSyncTime з кешу, якщо є
+        // Restore lastSyncTime from the cache when available
         if (data.lastSync) {
             lastSyncTime = GLib.DateTime.new_from_unix_local(data.lastSync);
             setStatus(isMini

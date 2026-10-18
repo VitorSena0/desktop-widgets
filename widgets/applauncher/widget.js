@@ -96,7 +96,7 @@ function maxAppsFor(sizeKey) {
         case 'minilarge':
             return 6;
         case 'compact':
-            return 4;  // Compact розмір - 4 іконки як у mini
+            return 4;  // compact size: 4 icons, same as mini
         case 'medium':
             return 8;
         case 'large':
@@ -116,7 +116,7 @@ function computeIconMetrics(cols, rows, widgetWidth, widgetHeight, sizeKey) {
     const padding = Math.min(TILE_PADDING_MAX, Math.max(TILE_PADDING_MIN, Math.round(minCell * TILE_PADDING_RATIO)));
     const available = Math.max(MIN_ICON_SIZE, minCell - (padding * 2));
 
-    // Для compact розміру збільшуємо іконки
+    // Bigger icons for the compact size
     const iconSizeRatio = sizeKey === 'compact' ? 0.95 : ICON_SIZE_RATIO;
     const iconSize = Math.min(MAX_ICON_SIZE, Math.max(MIN_ICON_SIZE, Math.round(available * iconSizeRatio)));
 

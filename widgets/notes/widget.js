@@ -183,6 +183,9 @@ export function render({ body, widget, theme, settings }) {
     });
 
     // Handle paste events in Clutter.Text
+    // Clipboard access: St.Clipboard is the only clipboard API available from
+    // the shell side (GTK's clipboard is not exposed here). It is used strictly
+    // inside the notes editor for copy/cut/paste of the widget's own content.
     textEditor.connect('button-press-event', (actor, event) => {
         if (event.get_button() === 2) { // Middle mouse button = paste
             const clipboard = St.Clipboard.get_default();
