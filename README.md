@@ -4,15 +4,11 @@ Desktop widgets for GNOME Shell: clock, calendar, weather, music, photos, batter
 
 A fork of [Widgets](https://github.com/TheRealSourcer/widgets) by TheRealSourcer.
 
-![Desktop Widgets screenshot](assets/screenshot.png)
+![Desktop Widgets](assets/screenshot-1.png)
 
-![Desktop Widgets full screenshot](assets/screenshot-full.png)
+![Desktop Widgets](assets/screenshot-2.png)
 
-![Desktop Widgets](assets/widgets-1.png)
-
-![Desktop Widgets](assets/widgets-2.png)
-
-![Desktop Widgets](assets/widgets-3.png)
+![Desktop Widgets](assets/screenshot-3.png)
 
 ## Features
 
@@ -27,22 +23,25 @@ A fork of [Widgets](https://github.com/TheRealSourcer/widgets) by TheRealSourcer
 
 | Widget | Description | Sizes |
 | --- | --- | --- |
-| **Clock** | Digital clock and date | All sizes |
+| **App Launcher** | Quick launcher for pinned applications | Medium, large, wide |
+| **Clock** | Analog clock with customizable appearance | All sizes |
+| **Digital Clock** | Digital clock and date display | All sizes |
 | **Binary Clock** | Time shown in binary format | Small, medium, large |
-| **Calendar** | Compact monthly calendar with current day highlight | Medium, portrait, large |
+| **Calendar** | Monthly calendar with current day highlight | Small, medium, portrait, large |
 | **Weather** | Current conditions and temperature (uses GNOME Weather location) | All sizes |
 | **Photos** | Rotating photos from folders or custom photo | All sizes |
 | **Battery** | Charge rings for computer and connected Bluetooth devices | Small, medium, large |
 | **Music** | Now playing via MPRIS (GNOME Music, Amberol, VLC, etc.) | Medium, portrait, large |
-| **Stopwatch** | Elapsed time counter with start/pause/reset controls | Medium, large |
-| **Timer** | Countdown timer with adjustable time and circular progress | Medium (2×1) |
-| **Folder Launcher** | Quick access to folders with customizable file manager | Medium, large |
+| **Tasks** | Simple todo list with checkboxes | Medium, portrait, large, tall |
+| **GitHub** | GitHub profile statistics and contribution graph | Large, wide |
+| **Screen Time** | Daily usage statistics and time tracking | Medium, large |
+| **System Monitor** | CPU, GPU, RAM, and disk usage monitoring | Medium, large |
+| **Notes** | Quick text notes widget | Medium, portrait, large, tall |
 | **Pomodoro** | Pomodoro technique timer with work/break cycles | Small |
 | **Lava Lamp** | Animated decorative lava lamp effect | Medium, large |
-| **GitHub** | GitHub profile statistics and contribution graph | Large, wide |
-| **Apps** | Quick launcher for pinned applications | Medium, large, wide |
-| **Screen Time** | Daily usage statistics and time tracking | Medium, large |
-| **Tasks** | Simple todo list with checkboxes | Medium, portrait, large, tall |
+| **Stopwatch** | Elapsed time counter with start/pause/reset controls | Medium, large |
+| **Folder Launcher** | Quick access to folders with customizable file manager | Medium, large |
+| **Timer** | Countdown timer with adjustable time and circular progress | Medium (2×1) |
 
 ## Requirements
 
@@ -108,6 +107,31 @@ gsettings reset-recursively org.gnome.shell.extensions.desktop-widgets-r3nhick
 
 ## Widget-specific features
 
+### App Launcher
+- Quick access to pinned applications
+- Drag and drop support for adding apps
+- Customizable grid layout
+- Opens apps with a single click
+
+### Clock & Digital Clock
+- Analog and digital time display options
+- Customizable appearance and colors
+- Date display with localization support
+- Multiple size options for different layouts
+
+### System Monitor
+- Real-time CPU usage monitoring
+- GPU usage tracking
+- RAM and disk usage statistics
+- Color-coded resource indicators
+- Responsive to system load changes
+
+### Notes
+- Quick text notes widget
+- Persistent storage across sessions
+- Multiple size options for longer notes
+- Simple and clean interface
+
 ### Timer
 - Manual time adjustment with +/- buttons (±1 and ±10 minutes/seconds)
 - Two modes: setup (adjust time) and running (shows time with progress)
@@ -131,6 +155,18 @@ gsettings reset-recursively org.gnome.shell.extensions.desktop-widgets-r3nhick
 - Contribution graph for the past year
 - Repository and follower counts
 - Caches data to work offline
+
+### Screen Time
+- Tracks daily application usage
+- Shows most used applications
+- Time breakdown by app
+- Historical data tracking
+
+### Music
+- Displays currently playing track
+- Album artwork and metadata
+- Play/pause and skip controls via MPRIS
+- Works with most Linux media players
 
 ## Development
 
