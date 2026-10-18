@@ -2,6 +2,8 @@ import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 
+import { warn } from '../logger.js';
+
 /**
  * Helpers ported from the upstream Widgets project, kept here so widget
  * modules can share them: per-extension data dir + JSON persistence
@@ -25,7 +27,7 @@ function ensureDirectory(dirPath) {
 
 		ensuredDirectories.add(dirPath);
 	} catch (error) {
-		console.error(`Error creating data directory ${dirPath}: ${error}`);
+		warn('data-dir', `Error creating data directory ${dirPath}: ${error}`);
 	}
 }
 
@@ -55,7 +57,7 @@ export function loadJsonFromFileAsync(filePath, callback) {
 			}
 		} catch (error) {
 			if (!error.matches(Gio.IOErrorEnum, Gio.IOErrorEnum.NOT_FOUND)) {
-				console.error(`Error reading ${filePath}: ${error}`);
+				warn('json-load', `Error reading ${filePath}: ${error}`);
 			}
 
 			callback(null);
@@ -70,7 +72,7 @@ export function loadJsonFromFileAsync(filePath, callback) {
 		try {
 			callback(JSON.parse(new TextDecoder('utf-8').decode(contents)));
 		} catch (parseError) {
-			console.error(`Corrupt JSON in ${filePath}; ignoring saved data: ${parseError}`);
+			warn('json-load', `Corrupt JSON in ${filePath}; ignoring saved data: ${parseError}`);
 			callback(null, parseError);
 		}
 	});
@@ -116,7 +118,7 @@ function flushWriteQueue(filePath) {
 			try {
 				file.replace_contents_finish(res);
 			} catch (error) {
-				console.error(`Error saving JSON to ${filePath}: ${error}`);
+				warn('json-save', `Error saving JSON to ${filePath}: ${error}`);
 			}
 
 			entry.running = false;
@@ -142,7 +144,7 @@ export function saveJsonToFileSync(filePath, data) {
 		Gio.File.new_for_path(filePath).replace_contents(
 			encodeJson(data), null, false, Gio.FileCreateFlags.NONE, null);
 	} catch (error) {
-		console.error(`Error saving JSON to ${filePath}: ${error}`);
+		warn('json-save', `Error saving JSON to ${filePath}: ${error}`);
 	}
 }
 

@@ -2,6 +2,8 @@ import GLib from 'gi://GLib';
 import Gio from 'gi://Gio';
 import Shell from 'gi://Shell';
 
+import { warn } from '../logger.js';
+
 // Desktop-widgets screen time engine: tracks focused windows and accumulates
 // per-app, per-hour seconds. Persists one JSON file per day.
 
@@ -45,13 +47,13 @@ function cleanupOldFiles(retentionDays) {
 				try {
 					dirFile.get_child(name).delete(null);
 				} catch (e) {
-					console.error(`Failed to delete old screen time file ${name}: ${e.message}`);
+					warn('screen-time-cleanup', `Failed to delete old screen time file ${name}: ${e.message}`);
 				}
 			}
 		}
 		enumerator.close(null);
 	} catch (e) {
-		console.error(`Failed to cleanup old screen time files: ${e.message}`);
+		warn('screen-time-cleanup', `Failed to cleanup old screen time files: ${e.message}`);
 	}
 }
 
@@ -83,11 +85,11 @@ function saveJsonToFile(filePath, data) {
 				try {
 					file.replace_contents_finish(result);
 				} catch (e) {
-					console.error(`Failed to save screen time data: ${e.message}`);
+					warn('screen-time-save', `Failed to save screen time data: ${e.message}`);
 				}
 			});
 	} catch (e) {
-		console.error(`Failed to save screen time data: ${e.message}`);
+		warn('screen-time-save', `Failed to save screen time data: ${e.message}`);
 	}
 }
 
