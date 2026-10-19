@@ -624,15 +624,22 @@ class WidgetController {
   };
 
   destroy() {
-    this._glass?.destroy();
-    this._glass = null;
+    if (this._glass) {
+      this._glass.destroy();
+      this._glass = null;
+    }
 
-    this._eventsClient?.destroy();
-    this._eventsClient = null;
+    if (this._eventsClient) {
+      this._eventsClient.destroy();
+      this._eventsClient = null;
+    }
+
     this._workspaceIntegration.destroy();
 
-    this._batteryDevicesUnsubscribe?.();
-    this._batteryDevicesUnsubscribe = null;
+    if (this._batteryDevicesUnsubscribe) {
+      this._batteryDevicesUnsubscribe();
+      this._batteryDevicesUnsubscribe = null;
+    }
 
     // Clean up fullscreen subscriptions
     if (this._fullscreenMonitorId) {
@@ -642,7 +649,9 @@ class WidgetController {
     }
 
     for (const record of Object.values(this._debounceTimers)) {
-      if (record?.id) GLib.source_remove(record.id);
+      if (record && record.id) {
+        GLib.source_remove(record.id);
+      }
     }
     this._debounceTimers = {};
 
@@ -686,10 +695,15 @@ class WidgetController {
 
     this._cancelActiveDrag();
 
-    this._editModeMenuItem?.destroy?.();
-    this._indicator?.destroy();
-    this._indicator = null;
+    if (this._editModeMenuItem && this._editModeMenuItem.destroy) {
+      this._editModeMenuItem.destroy();
+    }
     this._editModeMenuItem = null;
+
+    if (this._indicator) {
+      this._indicator.destroy();
+      this._indicator = null;
+    }
 
     this._clearWeatherInfo();
 
@@ -3348,8 +3362,10 @@ export default class DesktopWidgetsExtension extends Extension {
   };
 
   disable() {
-    this._controller?.destroy();
-    this._controller = null;
+    if (this._controller) {
+      this._controller.destroy();
+      this._controller = null;
+    }
     PhotosWidget.cleanup();
     this._unloadWidgetStylesheets();
     resetLogger();

@@ -1,8 +1,11 @@
 {
-  "description": "Desktop widgets for GNOME Shell in a grid layout: clock, binary clock, calendar, weather, photos, battery rings for your device, and an MPRIS music player. In edit mode you can add, move, resize, and remove widgets directly on your desktop, then style them with custom colors, borders, radius, shadow, and opacity. A fork of Widgets (https://github.com/TheRealSourcer/widgets).",
+  "description": "Desktop widgets for GNOME Shell in a grid layout: clock, binary clock, calendar, weather, photos, battery rings for your device, and an MPRIS music player. In edit mode you can add, move, resize, and remove widgets directly on your desktop, then style them with custom colors, borders, radius, shadow, and opacity.\n\nThe Notes widget uses clipboard access for copy/paste operations within the widget editor only (Ctrl+C, Ctrl+V, Ctrl+X). No data is shared with third parties.\n\nA fork of Widgets (https://github.com/TheRealSourcer/widgets).",
   "name": "Desktop widgets",
   "settings-schema": "org.gnome.shell.extensions.desktop-widgets-r3nhick",
   "shell-version": [
+    "47",
+    "48",
+    "49",
     "50",
     "51"
   ],

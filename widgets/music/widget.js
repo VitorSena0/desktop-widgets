@@ -1608,12 +1608,8 @@ let Controller = class Controller {
 		};
 
 		for (const [target, id] of this._controlSignals) {
-			try {
-				target.disconnect(id);
-			} catch (error) {
-				// Ignore disconnect failures.
-			};
-		};
+			target.disconnect(id);
+		}
 
 		this._controlSignals = [];
 
