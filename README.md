@@ -88,7 +88,7 @@ Then log out of your session and log back in.
 
 ## 📋 Requirements
 
-- **GNOME Shell** 45+ (tested on 45, 46, 47)
+- **GNOME Shell** 47+ (tested on 47, 48, 49, 50, 51)
 - **For Weather widget:** GNOME Weather app installed
 - **For Music widget:** Any MPRIS-compatible media player
 - **For GitHub widget:** Internet connection (caches data for offline use)
@@ -1019,7 +1019,7 @@ We welcome contributions!
 
 ## 📋 Requirements
 
-- **GNOME Shell** 45+ (tested on 45, 46, 47)
+- **GNOME Shell** 47+ (tested on 47, 48, 49, 50, 51)
 - **For Weather widget:** GNOME Weather app installed
 - **For Music widget:** Any MPRIS-compatible media player
 - **For GitHub widget:** Internet connection (caches data for offline use)
