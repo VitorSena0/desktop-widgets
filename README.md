@@ -42,28 +42,6 @@ gnome-extensions enable desktop-widgets@r3nhick
 
 Or use the Extensions app (GNOME Extensions or Extension Manager).
 
-### First steps
-
-1. **Open Extension Settings**
-   - Extensions app → Desktop Widgets → Settings icon
-   - Or: `gnome-extensions prefs desktop-widgets@r3nhick`
-
-2. **Add Your First Widget**
-   - Click "Add Widget" button
-   - Choose a widget type (e.g., "Clock")
-   - Click "Add" — the widget appears on your desktop
-
-3. **Position Widgets**
-   - Press `Super+W` to enter Edit Mode
-   - Drag widgets to desired positions
-   - Press `Super+W` again to exit
-   - Or click "Arrange widgets" to auto-snap to grid
-
-4. **Configure Widget**
-   - Find the widget in settings list
-   - Click the settings icon next to it
-   - Adjust settings (apply immediately)
-
 ### Updating
 
 ```bash
@@ -116,6 +94,31 @@ Then log out of your session and log back in.
 - **For GitHub widget:** Internet connection (caches data for offline use)
 
 ## 📖 Documentation
+
+<details>
+<summary><strong>🚀 First Steps</strong> — How to add and arrange your first widgets</summary>
+
+1. **Open Extension Settings**
+   - Extensions app → Desktop Widgets → Settings icon
+   - Or: `gnome-extensions prefs desktop-widgets@r3nhick`
+
+2. **Add Your First Widget**
+   - Click "Add Widget" button
+   - Choose a widget type (e.g., "Clock")
+   - Click "Add" — the widget appears on your desktop
+
+3. **Position Widgets**
+   - Press `Super+W` to enter Edit Mode
+   - Drag widgets to desired positions
+   - Press `Super+W` again to exit
+   - Or click "Arrange widgets" to auto-snap to grid
+
+4. **Configure Widget**
+   - Find the widget in settings list
+   - Click the settings icon next to it
+   - Adjust settings (apply immediately)
+
+</details>
 
 <details>
 <summary><strong>🎯 Widget Gallery & Details</strong> — Detailed description of all 19 widgets</summary>
