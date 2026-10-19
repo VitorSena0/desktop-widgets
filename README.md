@@ -26,11 +26,8 @@ A fork of [Widgets](https://github.com/TheRealSourcer/widgets) by TheRealSourcer
 ### From source
 
 ```bash
-# Clone repository
 git clone https://github.com/r3nhick/desktop-widgets.git
 cd desktop-widgets
-
-# Install to extensions directory
 mkdir -p ~/.local/share/gnome-shell/extensions
 cp -r . ~/.local/share/gnome-shell/extensions/desktop-widgets@r3nhick
 ```
@@ -671,7 +668,7 @@ cd ~/.local/share/gnome-shell/extensions/desktop-widgets@r3nhick
 git pull
 ```
 
-Then log out and log back in (or restart GNOME Shell with `Alt+F2` → `r` on X11).
+Then log out of your session and log back in.
 
 ### If Git Pull Fails
 
@@ -714,13 +711,8 @@ Then log out and log back in. Your widget data is preserved.
 Remove extension, all widget data, and settings:
 
 ```bash
-# Remove extension
 rm -rf ~/.local/share/gnome-shell/extensions/desktop-widgets@r3nhick
-
-# Remove widget data (pinned apps, tasks, notes, etc.)
 rm -rf ~/.local/share/desktop-widgets@r3nhick
-
-# Reset all settings
 gsettings reset-recursively org.gnome.shell.extensions.desktop-widgets-r3nhick
 ```
 
@@ -863,14 +855,15 @@ Create `icons/widgets/yourwidget.svg` (64×64px recommended).
 
 ### 5. Test
 
+Recompile schemas if you added settings:
+
 ```bash
-# Recompile schemas if you added settings
 glib-compile-schemas schemas/
+```
 
-# Reload extension (X11 only: Alt+F2 → r)
-# Or log out and back in
+Log out of your session and log back in to reload the extension, then enable it:
 
-# Enable widget
+```bash
 gnome-extensions enable desktop-widgets@r3nhick
 ```
 
@@ -965,10 +958,7 @@ const loaded = await loadJsonFromFileAsync(getDataDir(), filename);
 Compile translations and schemas:
 
 ```bash
-# Compile schemas
 glib-compile-schemas schemas/
-
-# Update translations
 node tools/extract-strings.mjs
 ```
 
